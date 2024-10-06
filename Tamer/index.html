@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tamer</title>
+<script src="pixi/pixi.min.js"></script>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f0f0f0;
+        font-family: Arial, sans-serif;
+    }
+
+    #loading {
+        display: none;
+        text-align: center;
+    }
+
+    .loader {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 10px auto;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    #game-container {
+        display: none;
+    }
+
+    button {
+        display: block;
+        margin: 20px auto;
+    }
+</style>
+</head>
+<body>
+<div id="loading">
+    <h2>Loading...</h2>
+    <div class="loader"></div>
+</div>
+<button id="start-btn">Start Game</button>
+<div id="game-container">
+    <!-- Main.js will be loaded dynamically here when the Start button is clicked -->
+</div>
+
+<script>
+    let gameStarted = false;
+    let gameScript;
+    const startBtn = document.getElementById('start-btn');
+    const loadingScreen = document.getElementById('loading');
+    const gameContainer = document.getElementById('game-container');
+
+    startBtn.addEventListener('click', () => {
+        if (!gameStarted) {
+            loadingScreen.style.display = 'block';
+            startBtn.style.display = 'none';
+
+            // Load the main.js script dynamically
+            gameScript = document.createElement('script');
+            gameScript.src = './main.js';
+            gameScript.type = 'module';
+            gameScript.onload = () => {
+                loadingScreen.style.display = 'none';
+                gameContainer.style.display = 'block';
+                gameStarted = true;
+            };
+            gameContainer.appendChild(gameScript);
+        }
+    });
+</script>
+</body>
+</html>

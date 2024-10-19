@@ -2,6 +2,8 @@ import Map from './map.js';
 import * as PIXI from './pixi/pixi.mjs';
 import { ObjectMap } from './object_map.js';
 import * as OBJ from './object.js';
+import * as ITEM from './item.js';
+import { ItemBox } from './item_box.js';
 async function drawobj(x, y, textureSrc, scale,app) {
     const obj_texture = await PIXI.Assets.load(textureSrc);
     obj_texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
@@ -34,13 +36,13 @@ async function drawobj(x, y, textureSrc, scale,app) {
 //     }
 //     console.log('end');
 // }
-function willCollide(x, y,objectMap,num,collisionAreaSize) {
+function willCollide(x, y,objectMap,num,collisionAreawidth,collisionAreaheight=collisionAreawidth) {
     const player_x = Math.floor(x / 20);
     const player_y = Math.floor(y / 20);
 
 
-    for (let i = -collisionAreaSize; i <= collisionAreaSize; i++) {
-        for (let j = -collisionAreaSize; j <= collisionAreaSize; j++) {
+    for (let i = -collisionAreawidth; i <= collisionAreawidth; i++) {
+        for (let j = -collisionAreaheight; j <= collisionAreaheight; j++) {
             const currentX = player_x + i;
             const currentY = player_y + j;
             if (objectMap.map[currentY] && objectMap.map[currentY][currentX] && objectMap.map[currentY][currentX].number === num) {
@@ -96,9 +98,9 @@ function willCollideWithAnimal(x, y,objectMap){
     for (let y = 0; y < 800; y++) {
         for (let x = 0; x < 800; x++) {
             if(objectMap.map[y][x])
-                obj_sprite[y][x] = await drawobj(x*20+objectMap.map[y][x].x_adding, y*20+objectMap.map[y][x].y_adding, objectMap.map[y][x].texture, +objectMap.map[y][x].size, app);
+                obj_sprite[y][x] = await drawobj(x*20+objectMap.map[y][x].x_adding, y*20+objectMap.map[y][x].y_adding, objectMap.map[y][x].texture, objectMap.map[y][x].size, app);
             if(animalMap.map[y][x])
-                animal_sprite[y][x] = await drawobj(x*20+animalMap.map[y][x].x_adding, y*20+animalMap.map[y][x].y_adding, animalMap.map[y][x].texture, +animalMap.map[y][x].size, app);
+                animal_sprite[y][x] = await drawobj(x*20+animalMap.map[y][x].x_adding, y*20+animalMap.map[y][x].y_adding, animalMap.map[y][x].texture, animalMap.map[y][x].size, app);
         }
     }
     
@@ -112,23 +114,58 @@ function willCollideWithAnimal(x, y,objectMap){
     const itemBar = await drawobj(window.innerWidth / 4, window.innerHeight/2 - 40, 'images/item_bar.png', 1, app);
     itemBar.anchor.set(0.5, 1);
     itemBar.scale.set(0.3)
+    const item_box= new ItemBox;
+    item_box.setValue(1,new ITEM.Berry);
+    const item_sprite = new Array(36).fill(null)
+    for(let i = 0; i < 9; i++){
+        if (item_box.items[i]){
+            item_sprite[i] = await drawobj(window.innerWidth / 4 - 200 + i * 50, window.innerHeight / 2 - 65, item_box.items[i].texture, item_box.items[i].size, app);
+        }
+    }
+    const itemAmountTexts = [];
+    for (let i = 0; i < 9; i++) {
+        const text = new PIXI.Text('', { fontFamily: 'fantasy', fontSize: 14, fill: 0x000000 }); // Adjust font properties as needed
+        text.anchor.set(0.5);
+        app.stage.addChild(text);
+        itemAmountTexts.push(text);
+    }
+
+
     // keyboard control
     const keys = {};
     const keyW = 87;
     const keyA = 65;
     const keyS = 83;
     const keyD = 68;
-    window.addEventListener('keydown', (event) => {
-        keys[event.keyCode] = true;
+    let mouseX = 0;
+    let mouseY = 0;
+    let started = 0;
+    
+    window.addEventListener('click', (event) => {
+        mouseX = Math.floor(((event.clientX - window.innerWidth / 2)/2 + player.x)/ 20)*20; // Adjust mouseX using the offset
+        mouseY = Math.floor(((event.clientY - window.innerHeight / 2)/2 + player.y)/ 20)*20; // Adjust mouseY using the offset
+        started = 1;
     });
+    
+    window.addEventListener('keydown', (event) => {
+        const keyCode = event.keyCode;
+    
+        if ([keyW, keyA, keyS, keyD].includes(keyCode)) {
+            keys[keyCode] = true;
+        }
+    });
+    
     window.addEventListener('keyup', (event) => {
-        keys[event.keyCode] = false;
+        const keyCode = event.keyCode;
+        if ([keyW, keyA, keyS, keyD].includes(keyCode)) {
+            keys[keyCode] = false;
+        }
     });
     let speed = 10;
     player.rotation=0;
     let players_float=1;
     let time_count=0;
-    app.ticker.add(() => {
+    app.ticker.add(async () => {
         let targetRotation = player.rotation;
         if (willCollide(player.x, player.y, objectMap, 4, 1)) {
             speed = 1; 
@@ -136,7 +173,16 @@ function willCollideWithAnimal(x, y,objectMap){
         if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)]==1){
             speed /= 2; 
         }
-        
+        if(willCollideWithTree(mouseX, mouseY, objectMap)&&started){
+            const test=item_box.setValue(0,new ITEM.Wood);
+            for(let i = 0; i < 9; i++){
+                if (item_box.items[i]!=null&&item_sprite[i]==null){
+                    if(test)
+                        item_sprite[i] = await drawobj(window.innerWidth / 4 - 200 + i * 50, window.innerHeight / 2 - 65, item_box.items[i].texture, item_box.items[i].size, app);
+                }
+            }
+            started=0;
+        }
         let newX = player.x;
         let newY = player.y;
         if (keys[keyW]) {
@@ -211,6 +257,26 @@ function willCollideWithAnimal(x, y,objectMap){
         app.stage.position.y = app.screen.height / 2;
         itemBar.x = player.x ;
         itemBar.y = player.y + window.innerHeight/4-40; 
+        
+        for (let i = 0; i < 9; i++) {
+            if (item_sprite[i]) {
+                item_sprite[i].x = itemBar.x - 200 + i * 50; 
+                item_sprite[i].y = itemBar.y - 25;
+                itemAmountTexts[i].text = item_box.items_amount[i];
+                if(item_box.items_amount[i]>999){
+                    itemAmountTexts[i].text=999;  
+                }if(item_box.items_amount[i]>99){
+                    itemAmountTexts[i].x = item_sprite[i].x + 10;
+                    itemAmountTexts[i].y = item_sprite[i].y + 15;  
+                }else if(item_box.items_amount[i]>9){
+                    itemAmountTexts[i].x = item_sprite[i].x + 14;
+                    itemAmountTexts[i].y = item_sprite[i].y + 15;  
+                }else{
+                    itemAmountTexts[i].x = item_sprite[i].x + 17;
+                    itemAmountTexts[i].y = item_sprite[i].y + 15;  
+                }
+            }
+        }
         speed = 10;
         for (let i = 0; i < 800; i++) {
             for (let j = 0; j < 800; j++) {
@@ -263,6 +329,7 @@ function willCollideWithAnimal(x, y,objectMap){
         }
 
         time_count++;
+        
     });
     
 })();

@@ -1,4 +1,3 @@
-import * as PIXI from './pixi/pixi.mjs';
 const Object_name = {
     TREE1: 1,
     TREE2: 2,
@@ -20,7 +19,7 @@ const FoodID = {
     SOULS: 5
 };
 
-export class MapObject {
+export class Object {
     constructor(number = 0, x, y,texture,size,x_adding,y_adding) {
         this.number = number;
         this.x = x;
@@ -31,35 +30,32 @@ export class MapObject {
         this.y_adding=y_adding;
     }
 
-    update() {
-        // Add any update logic for MapObject here
-    }
 }
 
-export class Tree1 extends MapObject {
+export class Tree1 extends Object {
     constructor(x, y) {
         super(Object_name.TREE1, x, y,'images/tree1.png',150,15,0);
     }
 }
 
-export class Tree2 extends MapObject {
+export class Tree2 extends Object {
     constructor(x, y) {
         super(Object_name.TREE2, x, y,'images/tree2.png',150,0,0);
     }
 }
 
-export class Grass extends MapObject {
+export class Grass extends Object {
     constructor(x, y) {
         super(Object_name.GRASS, x, y,'images/grass1.png',20,10,0);
     }
 }
 
-export class BerryBush extends MapObject {
+export class BerryBush extends Object {
     constructor(x, y) {
         super(Object_name.BERRYBUSH, x, y,'images/burrybush.png',60,15,0);
     }
 }
-export class Animal extends MapObject {
+export class Animal extends Object {
     constructor(number = 0, x, y, texture,size,x_adding,y_adding, foodID = [],speed) {
         super(number, x, y, texture,size,x_adding,y_adding);
         this.foodID = foodID;

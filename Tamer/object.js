@@ -60,59 +60,88 @@ export class BerryBush extends MapObject {
     }
 }
 export class Animal extends MapObject {
-    constructor(number = 0, x, y, texture,size,x_adding,y_adding, foodID = []) {
+    constructor(number = 0, x, y, texture,size,x_adding,y_adding, foodID = [],speed) {
         super(number, x, y, texture,size,x_adding,y_adding);
         this.foodID = foodID;
+        this.movement=0;
+        this.speed = speed;
     }
 
-    move(x, y) {
-        this.x = x;
-        this.y = y;
+    move() {
+        let moveX=0, moveY=0;
+        if(this.movement==1){
+            moveY= -this.speed;
+        }
+        else if(this.movement==2){
+            moveX= +this.speed;
+            moveY = -this.speed;
+        }else if(this.movement==3){
+            moveX= this.speed;
+        }else if(this.movement==4){
+            moveX= this.speed;
+            moveY= this.speed;
+        }else if(this.movement==5){
+            moveY= this.speed;
+        }else if(this.movement==6){
+            moveX= -this.speed;
+            moveY= this.speed;
+        }else if(this.movement==7){
+            moveX= -this.speed;
+        }else if(this.movement==0){
+            moveX= -this.speed;
+            moveY= -this.speed;
+        }
+        
+        const randomNumber = Math.random(); 
+        if (randomNumber > 0.8) {
+            this.movement= Math.floor(Math.random() * 8); 
+        }
+        return { moveX, moveY };
     }
 }
 export class Dog extends Animal {
     constructor( x, y) {
-        super(Object_name.DOG, x, y, 'images/dog.png',40,0,0,  [FoodID.BONES]);
+        super(Object_name.DOG, x, y, 'images/dog.png',40,0,0,  [FoodID.BONES],3);
     }
 
 }
 
 export class Cow extends Animal {
     constructor(x, y) {
-        super(Object_name.COW, x, y, 'images/cow.png',80,0,0, [FoodID.GRASS]);
+        super(Object_name.COW, x, y, 'images/cow.png',80,0,0, [FoodID.GRASS],3);
     }
 
 }
 
 export class Pig extends Animal {
     constructor(x, y) {
-        super(Object_name.PIG, x, y, 'images/pig.png',60,0,0, [FoodID.MUSHROOM]);
+        super(Object_name.PIG, x, y, 'images/pig.png',60,0,0, [FoodID.MUSHROOM],3);
     }
 
 }
 
 export class Rabbit extends Animal {
     constructor(x, y) {
-        super(Object_name.RABBIT, x, y, 'images/rabbit.png',20,0,0, [FoodID.CARROTS]);
+        super(Object_name.RABBIT, x, y, 'images/rabbit.png',20,0,0, [FoodID.CARROTS],3);
     }
 
 }
 
 export class Sheep extends Animal {
     constructor(x, y) {
-        super(Object_name.SHEEP, x, y, 'images/sheep.png',60,0,0, [FoodID.GRASS]);
+        super(Object_name.SHEEP, x, y, 'images/sheep.png',60,0,0, [FoodID.GRASS],3);
     }
 
 }
 
 export class SoulFox extends Animal {
     constructor(x, y) {
-        super(Object_name.SOUL_FOX, x, y, 'images/soul_fox.png',100,30,20, [FoodID.SOULS]);
+        super(Object_name.SOUL_FOX, x, y, 'images/soul_fox.png',100,0,0, [FoodID.SOULS],3);
     }
 
 }
-export class Player extends MapObject{
+export class Player extends Animal{
     constructor(x, y) {
-        super(Object_name.PLAYER, x, y,100,0,0, 'images/player.png');
+        super(Object_name.PLAYER, x, y,'images/player.png',100,0,0, [],3);
     }
 }

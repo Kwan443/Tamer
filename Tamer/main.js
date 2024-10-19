@@ -14,26 +14,26 @@ async function drawobj(x, y, textureSrc, scale,app) {
     app.stage.addChild(obj_sprite);
     return obj_sprite;
 }
-function logMapDataNearPlayer(playerX, playerY, mapData, radius) {
-    const mapSize = mapData.length;
-    const startX = Math.max(0, playerX - radius);
-    const endX = Math.min(mapSize - 1, playerX + radius);
-    const startY = Math.max(0, playerY - radius);
-    const endY = Math.min(mapSize - 1, playerY + radius);
+// function logMapDataNearPlayer(playerX, playerY, mapData, radius) {
+//     const mapSize = mapData.length;
+//     const startX = Math.max(0, playerX - radius);
+//     const endX = Math.min(mapSize - 1, playerX + radius);
+//     const startY = Math.max(0, playerY - radius);
+//     const endY = Math.min(mapSize - 1, playerY + radius);
 
-    console.log('Map data near player:');
-    console.log('start');
-    for (let y = startY; y <= endY; y++) {
-        let row = '';
-        for (let x = startX; x <= endX; x++) {
-            if(mapData[y][x]!=null)
-                row += mapData[y][x].number + ' ';
-            else    row += 0 + ' ';
-        }
-        console.log(y+':'+row);
-    }
-    console.log('end');
-}
+//     console.log('Map data near player:');
+//     console.log('start');
+//     for (let y = startY; y <= endY; y++) {
+//         let row = '';
+//         for (let x = startX; x <= endX; x++) {
+//             if(mapData[y][x]!=null)
+//                 row += mapData[y][x].number + ' ';
+//             else    row += 0 + ' ';
+//         }
+//         console.log(y+':'+row);
+//     }
+//     console.log('end');
+// }
 function willCollide(x, y,objectMap,num,collisionAreaSize) {
     const player_x = Math.floor(x / 20);
     const player_y = Math.floor(y / 20);
@@ -49,7 +49,7 @@ function willCollide(x, y,objectMap,num,collisionAreaSize) {
         }
     }
 
-    return false; // No collision detected
+    return false; 
 }
 function willCollideWithTree(x, y,objectMap){
     return willCollide(x, y ,objectMap,1,1)||willCollide(x, y ,objectMap,2,1);
@@ -79,7 +79,7 @@ function willCollideWithAnimal(x, y,objectMap){
     //make a object map
     const objectMap = new ObjectMap(800, 800, app);
     const animalMap = new ObjectMap(800, 800, app);
-    objectMap.generateObjects(); 
+    objectMap.generateObjects(map); 
     const numOfEachAnimal = {
         Dog: 100,
         Cow: 100,
@@ -108,7 +108,6 @@ function willCollideWithAnimal(x, y,objectMap){
     }
     
     animalMap.addObject(new OBJ.Player(Math.floor(player.x / 20), Math.floor(player.y / 20)));
-    console.log(animalMap.map[Math.floor(player.y / 20)][Math.floor(player.x / 20)].number);
     // make an item bar
     const itemBar = await drawobj(window.innerWidth / 4, window.innerHeight/2 - 40, 'images/item_bar.png', 1, app);
     itemBar.anchor.set(0.5, 1);
@@ -127,16 +126,19 @@ function willCollideWithAnimal(x, y,objectMap){
     });
     let speed = 10;
     player.rotation=0;
-    
+    let players_float=1;
+    let time_count=0;
     app.ticker.add(() => {
         let targetRotation = player.rotation;
-        if (willCollide(player.x, player.y - speed, objectMap, 4, 1)) {
+        if (willCollide(player.x, player.y, objectMap, 4, 1)) {
             speed = 1; 
+        }
+        if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)]==1){
+            speed /= 2; 
         }
         
         let newX = player.x;
         let newY = player.y;
-        
         if (keys[keyW]) {
             newY -= speed;
             targetRotation = keys[keyD] ? Math.PI / 4 : 0;
@@ -153,12 +155,37 @@ function willCollideWithAnimal(x, y,objectMap){
             newX += speed;
             targetRotation = keys[keyS] ? 3 * Math.PI / 4 : keys[keyW] ? Math.PI / 4 : Math.PI / 2;
         }
-        
+        if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 1&&newY!=player.y) {
+            if (time_count === 20) {
+                players_float *= -1;
+                time_count = 0;
+            }
+            newX += Math.sin(time_count * 0.1) * players_float; 
+        }else if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 1) {
+            if (time_count === 20) {
+                players_float *= -1;
+                time_count = 0;
+            }
+            newY += Math.sin(time_count * 0.1) * players_float ; 
+        }
         if (
-            newX >= 0 && newX < 800 * 20 && 
+            willCollideWithTree(player.x, newY, objectMap) || 
+            willCollideWithAnimal(player.x, newY, animalMap) 
+        ) {
+            newY=player.y;
+        }
+        if (
+            willCollideWithTree(newX, player.y, objectMap) || 
+            willCollideWithAnimal(newX, player.y, animalMap)  
+        ) {
+            newX=player.x;
+        }
+        if (
+            (newX >= 0 && newX < 800 * 20 && 
             newY >= 0 && newY < 800 * 20 && 
             !willCollideWithTree(newX, newY, objectMap) && 
-            !willCollideWithAnimal(newX, newY, animalMap) 
+            !willCollideWithAnimal(newX, newY, animalMap) )&&(
+                newX!=player.x||newY!=player.y)
         ) {
             if (!animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]) {
                 animalMap.moveObject(Math.floor(player.x / 20), Math.floor(player.y / 20), Math.floor(newX / 20), Math.floor(newY / 20));
@@ -188,31 +215,54 @@ function willCollideWithAnimal(x, y,objectMap){
         for (let i = 0; i < 800; i++) {
             for (let j = 0; j < 800; j++) {
                 if (animal_sprite[i][j]) {
-                    
-                    const { moveX, moveY } =  animalMap.map[i][j].move();
+                    let { moveX, moveY } =  animalMap.map[i][j].move(); 
+                    if (map.mapData[i][j] == 1) {
+                        moveX/=1.5; 
+                        moveY/=1.5; 
+                    }
                     let newX = animal_sprite[i][j].x +moveX;
                     let newY = animal_sprite[i][j].y +moveY;
+                    if (map.mapData[i][j] == 1&&newY!=animal_sprite[i][j].y) {
+                        if (time_count == 20+i*5+j*3) {
+                            players_float *= -1;
+                            time_count = i*5+j*3;
+                        }
+                        newX += Math.sin(time_count * 0.1) * players_float; 
+                    }else if (map.mapData[i][j] == 1) {
+                        if (time_count === 20+i*5+j*3) {
+                            players_float *= -1;
+                            time_count = i*5+j*3;
+                        }
+                        newY += Math.sin(time_count * 0.1) * players_float ; 
+                    }
                     if (
                         newX >= 0 && newX < 800 * 20 && 
                         newY >= 0 && newY < 800 * 20 
                     ) {
-                        if (!animalMap.map[Math.floor(newY / 20)]&&!animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]) {
-                            animalMap.moveObject(Math.floor(animal_sprite[i][j].x / 20), Math.floor(animal_sprite[i][j].y / 20), Math.floor(newX / 20), Math.floor(newY / 20));
-                            animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]=animalMap.map[i][j];
-                            animalMap.map[i][j]=null;
+                        if (animalMap.map[Math.floor(newY / 20)]&&(Math.floor(newY / 20)!=i||Math.floor(newX / 20)!=j)&&animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]==null) {
+                            animalMap.moveObject(j,i, Math.floor(newX / 20), Math.floor(newY / 20));
+                            animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)].x=newX;
+                            animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)].y=newY;
+                            animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)]=animal_sprite[i][j];
+                            animal_sprite[i][j]=null;
                             animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)].x = newX;
                             animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)].y = newY;
-
                         }
-                        else if(animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]===animalMap.map[i][j]){
+                        else if((Math.floor(newY / 20)==i&&Math.floor(newX / 20)==j)){
                             animal_sprite[i][j].x = newX;
                             animal_sprite[i][j].y = newY;
                         }
+                        else {
+                            animalMap.map[i][j].change_move();
+                        }
+                    }else {
+                        animalMap.map[i][j].change_move();
                     }
                 }
             }
         }
-        logMapDataNearPlayer(Math.floor(player.x/20), Math.floor(player.y/20), animalMap.map, 3);
+
+        time_count++;
     });
     
 })();

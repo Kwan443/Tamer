@@ -87,16 +87,19 @@ export class Animal extends MapObject {
             moveY= this.speed;
         }else if(this.movement==7){
             moveX= -this.speed;
-        }else if(this.movement==0){
+        }else if(this.movement==8){
             moveX= -this.speed;
             moveY= -this.speed;
         }
         
         const randomNumber = Math.random(); 
-        if (randomNumber > 0.8) {
-            this.movement= Math.floor(Math.random() * 8); 
+        if (randomNumber > 0.99) {
+            this.movement= Math.floor(Math.random() * 9); 
         }
         return { moveX, moveY };
+    }
+    change_move(){
+        this.movement= Math.floor(Math.random() * 9); 
     }
 }
 export class Dog extends Animal {

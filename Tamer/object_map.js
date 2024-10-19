@@ -11,18 +11,24 @@ export class ObjectMap {
 		return Array(this.height).fill().map(() => Array(this.width).fill(null));
 	}
 
-	generateObjects() {
+	generateObjects(base_map) {
+		const mapData = base_map.getMapData();
+	
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
-				const random_num = Math.random();
-				if (random_num < 0.001) {
-					this.addObject(new OBJ.Tree1(x, y));
-				} else if (random_num < 0.002) {
-					this.addObject(new OBJ.Tree2(x, y));
-				} else if (random_num < 0.003) {
-					this.addObject(new OBJ.BerryBush(x, y));
-				} else if (random_num < 0.01) {
-					this.addObject(new OBJ.Grass(x, y));
+				const tileType = mapData[y][x];
+	
+				if (tileType === 0) {
+					const random_num = Math.random();
+					if (random_num < 0.001) {
+						this.addObject(new OBJ.Tree1(x, y));
+					} else if (random_num < 0.002) {
+						this.addObject(new OBJ.Tree2(x, y));
+					} else if (random_num < 0.003) {
+						this.addObject(new OBJ.BerryBush(x, y));
+					} else if (random_num < 0.01) {
+						this.addObject(new OBJ.Grass(x, y));
+					}
 				}
 			}
 		}
@@ -64,10 +70,10 @@ export class ObjectMap {
 			this.map[y][x] = null;
 		}
 	}
-	moveObject(x, y,newX,neY){
+	moveObject(x, y,newX,newY){
 		const gameObject = this.map[y][x];
 		if (gameObject) {
-			this.map[neY][newX] = this.map[y][x];
+			this.map[newY][newX] = this.map[y][x];
 			this.map[y][x] = null;
 		}
 	}

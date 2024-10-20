@@ -1,25 +1,48 @@
+
 export class ItemBox {
     constructor() {
         this.items = new Array(36).fill(null); 
         this.items_amount = new Array(36).fill(0); 
     }
-
-    setValue(index, item) {
-        if (index >= 0 && index < this.items.length&&this.items[index] ==null) {
+    
+    setValue(item) {
+        let index=0;
+        let have_same=0;
+        if(this.items[index] != null&&this.items[index].number == item.number){
+            have_same=1;
+        }
+        while(this.items[index] != null&&this.items[index].number != item.number){
+            have_same=0;
+            index++;
+            if(index == this.items.length){
+                break;
+            }
+            have_same=1;
+        }
+        if(have_same==0){
+            index=0;
+            while(this.items[index] != null){
+                index++;
+                if(index == this.items.length){
+                    console.error("Index out of bounds.");
+                    return -1;
+                }
+            }
+        }
+        if (this.items[index] ==null) {
             this.items[index] = item;
             this.items_amount[index] = 1;
-        } else if(index >= 0 && index < this.items.length&&this.items[index] &&this.items[index].number == item.number){
+            return index;
+        } else if(this.items[index].number == item.number){
             this.items_amount[index]++;
-            return false;
-        }else if(this.items[index] && this.items[index].number != item.number){
-            console.error("Not same item.");
-            return false;
+            return -1;
         }
-        else {
-            console.error("Index out of bounds.");
-            return false;
+        else{
+            console.error("Index out of bounds OR Not same item.");
+            return -1;
         }
-        return true;
     }
-
+    checkNull(index){
+        return this.items[index] == null;
+    }
 }

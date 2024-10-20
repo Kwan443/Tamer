@@ -1,4 +1,6 @@
-const Object_name = {
+import { Item_name } from './item.js';
+
+export const Object_name = {
     TREE1: 1,
     TREE2: 2,
     GRASS: 3,
@@ -11,7 +13,7 @@ const Object_name = {
     SOUL_FOX: 10,
     PLAYER: 11
 };
-const FoodID = {
+export const FoodID = {
     BONES: 1,
     GRASS: 2,
     MUSHROOM: 3,
@@ -20,7 +22,7 @@ const FoodID = {
 };
 
 export class Object {
-    constructor(number = 0, x, y,texture,size,x_adding,y_adding) {
+    constructor(number = 0, x, y,texture,size,x_adding,y_adding,hp=0) {
         this.number = number;
         this.x = x;
         this.y = y;
@@ -31,28 +33,35 @@ export class Object {
     }
 
 }
-
-export class Tree1 extends Object {
-    constructor(x, y) {
-        super(Object_name.TREE1, x, y,'images/tree1.png',150,15,0);
+export class Material extends Object {
+    constructor(number = 0, x, y, texture,size,x_adding,y_adding,getting_item_id= [],getting_item_number) {
+        super(number, x, y, texture,size,x_adding,y_adding);
+        this.getting_item_id=getting_item_id;
+        this.getting_item_number=getting_item_number
     }
 }
 
-export class Tree2 extends Object {
+export class Tree1 extends Material {
     constructor(x, y) {
-        super(Object_name.TREE2, x, y,'images/tree2.png',150,0,0);
+        super(Object_name.TREE1, x, y,'images/tree1.png',150,15,0,[Item_name.WOOD,Item_name.COCONUT],2);
     }
 }
 
-export class Grass extends Object {
+export class Tree2 extends Material {
     constructor(x, y) {
-        super(Object_name.GRASS, x, y,'images/grass1.png',20,10,0);
+        super(Object_name.TREE2, x, y,'images/tree2.png',150,0,0,[Item_name.WOOD,Item_name.LEAVES],2);
     }
 }
 
-export class BerryBush extends Object {
+export class Grass extends Material {
     constructor(x, y) {
-        super(Object_name.BERRYBUSH, x, y,'images/burrybush.png',60,15,0);
+        super(Object_name.GRASS, x, y,'images/grass1.png',20,10,0,[Item_name.CARROT,Item_name.POTATO,Item_name.WHEAT],3);
+    }
+}
+
+export class BerryBush extends Material {
+    constructor(x, y) {
+        super(Object_name.BERRYBUSH, x, y,'images/burrybush.png',60,15,0,[Item_name.BERRY],1);
     }
 }
 export class Animal extends Object {

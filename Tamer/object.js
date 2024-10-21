@@ -22,7 +22,7 @@ export const FoodID = {
 };
 
 export class Object {
-    constructor(number = 0, x, y,texture,size,x_adding,y_adding,hp=0) {
+    constructor(number = 0, x, y,texture,size,x_adding,y_adding,full_hp=100,hp=full_hp) {
         this.number = number;
         this.x = x;
         this.y = y;
@@ -30,12 +30,14 @@ export class Object {
         this.size=size;
         this.x_adding=x_adding;
         this.y_adding=y_adding;
+        this.full_hp=full_hp;
+        this.hp=hp;
     }
 
 }
 export class Material extends Object {
-    constructor(number = 0, x, y, texture,size,x_adding,y_adding,getting_item_id= [],getting_item_number) {
-        super(number, x, y, texture,size,x_adding,y_adding);
+    constructor(number = 0, x, y, texture,size,x_adding,y_adding,getting_item_id= [],getting_item_number,full_hp=100) {
+        super(number, x, y, texture,size,x_adding,y_adding,full_hp);
         this.getting_item_id=getting_item_id;
         this.getting_item_number=getting_item_number
     }
@@ -65,8 +67,8 @@ export class BerryBush extends Material {
     }
 }
 export class Animal extends Object {
-    constructor(number = 0, x, y, texture,size,x_adding,y_adding, foodID = [],speed) {
-        super(number, x, y, texture,size,x_adding,y_adding);
+    constructor(number = 0, x, y, texture,size,x_adding,y_adding, foodID = [],speed,full_hp=100) {
+        super(number, x, y, texture,size,x_adding,y_adding,full_hp);
         this.foodID = foodID;
         this.movement=0;
         this.speed = speed;

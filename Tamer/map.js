@@ -68,13 +68,51 @@ class Map {
                 if (noiseValue < 0.3) {
                     tileType = 0; 
                 } else {
-                    tileType = 1; 
+                    let water_neighbor = false;
+                    let lava_neighbor = false;
+                    for (let yOffset = -2; yOffset <= 2; yOffset++) {
+                        for (let xOffset = -2; xOffset <= 2; xOffset++) {
+                            if (y + yOffset >= 0 && y + yOffset < height && x + xOffset >= 0 && x + xOffset < width) {
+                                if (mapData[y + yOffset]&&mapData[y + yOffset][x + xOffset] == 1) {
+                                    water_neighbor = true;
+                                    break;
+                                }
+                                if (mapData[y + yOffset]&&mapData[y + yOffset][x + xOffset] == 2) {
+                                    lava_neighbor = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (water_neighbor||lava_neighbor) {
+                            break;
+                        }
+                    }
+                
+                    if (water_neighbor) {
+                        tileType = 1;
+                    } else if(lava_neighbor){
+                        tileType = 2;
+                    }
+                    else {
+                        tileType = Math.random() < 0.8 ? 1 : 2; 
+                    }
                 }
 
                 mapData[y][x] = tileType;
             }
         }
-
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if(mapData[y][x] !=mapData[y][x-1] &&(mapData[y][x]==1||mapData[y][x]==2)&&(mapData[y][x-1]==1||mapData[y][x-1]==2)){
+                    mapData[y][x]= Math.random() < 0.99?3:4;
+                    mapData[y][x-1]= Math.random() < 0.99?3:4;
+                }
+                if(mapData[y-1]&&(mapData[y][x] !=mapData[y-1][x] &&(mapData[y][x]==1||mapData[y][x]==2)&&(mapData[y-1][x]==1||mapData[y-1][x]==2))){
+                    mapData[y][x]= Math.random() < 0.99?3:4;
+                    mapData[y][x-1]= Math.random() < 0.99?3:4;
+                }
+            }
+        }
         return mapData;
     }
     getMapData(){
@@ -87,20 +125,22 @@ class Map {
             for (let x = 0; x < mapData[y].length; x++) {
                 const tileType = mapData[y][x];
                 let color;
-                let map_detail = Math.random() < 0.1 ? 1 : 0;
 
                 switch (tileType) {
                     case 0:
-                        color =map_detail == 0?0x5c8852:0x888888; //grass
+                        color =Math.random() > 0.1?0x5c8852:0x80735a; //grass
                         break;
                     case 1:
                         color = 0x4e82ff; // water
                         break;
                     case 2:
-                        color = 0xe6b668; // sand
+                        color = 0xffa500; // lava
                         break;
                     case 3:
-                        color =map_detail == 0?0x8c8c8c:0xffffff; //stone
+                        color =0x8c8c8c; //stone
+                        break;
+                    case 4:
+                        color =0x300542; //obsidian
                         break;
                     default:
                         color = 0xffffff; // Default color

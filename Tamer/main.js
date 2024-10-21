@@ -84,6 +84,28 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
     }
 
     started = 0;
+}function createHPBar(currentHP, maxHP) {
+    const barWidth = 200;
+    const barHeight = 30;
+
+    const greenColor = 0x00FF00;
+    const redColor = 0xFF0000;
+
+    const hpBar = new PIXI.Graphics();
+
+    const greenWidth = (currentHP / maxHP) * barWidth;
+
+    // Draw red background bar
+    hpBar.beginFill(redColor);
+    hpBar.drawRect(0, 0, barWidth, barHeight);
+    hpBar.endFill();
+
+    // Draw green HP bar
+    hpBar.beginFill(greenColor);
+    hpBar.drawRect(0, 0, greenWidth, barHeight);
+    hpBar.endFill();
+
+    return hpBar;
 }
 (async () => {
     const app = new PIXI.Application({
@@ -101,9 +123,11 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
     
     // make a players
     const player = await drawobj(Math.random() * 800 * 20, Math.random() * 800 * 20, 'images/player.png', 60, app); 
-
     //Math.random() * 800 * 20, Math.random() * 800 * 20
-   
+
+
+
+
     //make a object map
     const objectMap = new ObjectMap(800, 800, app);
     const animalMap = new ObjectMap(800, 800, app);
@@ -134,14 +158,14 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
         player.x = Math.random() * 800 * 20;
         player.y = Math.random() * 800 * 20;
     }
-    
-    animalMap.addObject(new OBJ.Player(Math.floor(player.x / 20), Math.floor(player.y / 20)));
+    let play_obj=new OBJ.Player(Math.floor(player.x / 20), Math.floor(player.y / 20));
+    animalMap.addObject(play_obj);
 
 
     // make an item bar
     const itemBar = await drawobj(window.innerWidth / 4, window.innerHeight/2 - 40, 'images/item_bar.png', 1, app);
     itemBar.anchor.set(0.5, 1);
-    itemBar.scale.set(0.3)
+    itemBar.scale.set(0.3);
     const item_box= new ItemBox;
     const item_sprite = new Array(36).fill(null);
     for(let i = 0; i < 9; i++){
@@ -166,6 +190,11 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
     all_item[ITEM.Item_name.POTATO] = new ITEM.Potato();
     all_item[ITEM.Item_name.WHEAT] = new ITEM.Wheat();
 
+
+    // make a hp bar
+    
+    const player_hpBar = createHPBar(play_obj.hp, play_obj.full_hp);
+    app.stage.addChild(player_hpBar);
 
     // keyboard control
     const keys = {};
@@ -287,6 +316,8 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
         app.stage.pivot.y = player.y;
         app.stage.position.x = app.screen.width / 2;
         app.stage.position.y = app.screen.height / 2;
+        player_hpBar.x=player.x-227;
+        player_hpBar.y=player.y+ window.innerHeight/4-120;
         itemBar.x = player.x ;
         itemBar.y = player.y + window.innerHeight/4-40; 
         

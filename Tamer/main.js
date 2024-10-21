@@ -16,7 +16,7 @@ async function drawobj(x, y, textureSrc, scale,app) {
     app.stage.addChild(obj_sprite);
     return obj_sprite;
 }
-async function deleteobj(obj,sprite){
+async function deleteobj(obj,sprite,app){
     obj=null;
     app.stage.removeChild(sprite);
     sprite = null;

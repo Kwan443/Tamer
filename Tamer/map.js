@@ -104,12 +104,12 @@ class Map {
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 if(mapData[y][x] !=mapData[y][x-1] &&(mapData[y][x]==1||mapData[y][x]==2)&&(mapData[y][x-1]==1||mapData[y][x-1]==2)){
-                    mapData[y][x]= Math.random() < 0.99?3:4;
-                    mapData[y][x-1]= Math.random() < 0.99?3:4;
+                    mapData[y][x]= Math.random() < 0.9?3:4;
+                    mapData[y][x-1]= Math.random() < 0.9?3:4;
                 }
                 if(mapData[y-1]&&(mapData[y][x] !=mapData[y-1][x] &&(mapData[y][x]==1||mapData[y][x]==2)&&(mapData[y-1][x]==1||mapData[y-1][x]==2))){
-                    mapData[y][x]= Math.random() < 0.99?3:4;
-                    mapData[y][x-1]= Math.random() < 0.99?3:4;
+                    mapData[y][x]= Math.random() < 0.95?3:4;
+                    mapData[y][x-1]= Math.random() < 0.95?3:4;
                 }
             }
         }

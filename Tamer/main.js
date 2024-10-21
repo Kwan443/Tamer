@@ -16,6 +16,11 @@ async function drawobj(x, y, textureSrc, scale,app) {
     app.stage.addChild(obj_sprite);
     return obj_sprite;
 }
+async function deleteobj(obj,sprite){
+    obj=null;
+    app.stage.removeChild(sprite);
+    sprite = null;
+}
 // function logMapDataNearPlayer(playerX, playerY, mapData, radius) {
 //     const mapSize = mapData.length;
 //     const startX = Math.max(0, playerX - radius);
@@ -74,17 +79,24 @@ function willCollideWithObject(x, y, objectMap) {
     }
     return null;
 }
-async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprite, window, all_items,app) {
+async function get_item(mouseX, mouseY, objectMap, item_box, item_sprite, window, all_items,app,open_bag) {
     let item_id=willCollideWithObject(mouseX, mouseY, objectMap);
     if (item_id) {
         const test = item_box.setValue(all_items[item_id]);
-        if(test>-1&&test<10) {
+        if(test=>0&&test<9) {
             item_sprite[test] = await drawobj(window.innerWidth / 4 - 200 + test * 50, window.innerHeight / 2 - 65, all_items[item_id].texture, all_items[item_id].size, app);
+            return true;
         }
+        if(open_bag==true&&test>9&&test<36){
+            item_sprite[test] = await drawobj(window.innerWidth / 4 - 200 + (test % 9) * 50, window.innerHeight / 2 - 75 + Math.floor(i/9) * 50, all_items[item_id].texture, all_items[item_id].size, app);
+            return true;
+        }
+        return true;
     }
+    return false;
 
-    started = 0;
-}function createHPBar(currentHP, maxHP) {
+}
+function createHPBar(currentHP, maxHP) {
     const barWidth = 200;
     const barHeight = 30;
 
@@ -107,6 +119,22 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
 
     return hpBar;
 }
+function updateHPBar(hpBar, currentHP, maxHP) {
+    currentHP=Math.max(currentHP,0);
+    const barWidth = 200;
+    const greenWidth = (currentHP / maxHP) * barWidth;
+
+    hpBar.clear(); 
+    hpBar.beginFill(0xFF0000); 
+    hpBar.drawRect(0, 0, barWidth, 30);
+    hpBar.endFill();
+
+    hpBar.beginFill(0x00FF00); 
+    hpBar.drawRect(0, 0, greenWidth, 30);
+    hpBar.endFill();
+}
+
+
 (async () => {
     const app = new PIXI.Application({
         width: window.innerWidth*1.5 ,
@@ -166,6 +194,7 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
     const itemBar = await drawobj(window.innerWidth / 4, window.innerHeight/2 - 40, 'images/item_bar.png', 1, app);
     itemBar.anchor.set(0.5, 1);
     itemBar.scale.set(0.3);
+    const item_bag = new Array(3).fill(null);
     const item_box= new ItemBox;
     const item_sprite = new Array(36).fill(null);
     for(let i = 0; i < 9; i++){
@@ -173,12 +202,11 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
             item_sprite[i] = await drawobj(window.innerWidth / 4 - 200 + i * 50, window.innerHeight / 2 - 65, item_box.items[i].texture, item_box.items[i].size, app);
         }
     }
-    const itemAmountTexts = [];
+    const item_text_sprite = new Array(36).fill(null);
     for (let i = 0; i < 9; i++) {
-        const text = new PIXI.Text('', { fontFamily: 'fantasy', fontSize: 14, fill: 0x000000 }); // Adjust font properties as needed
-        text.anchor.set(0.5);
-        app.stage.addChild(text);
-        itemAmountTexts.push(text);
+            item_text_sprite[i] = new PIXI.Text('', { fontFamily: 'fantasy', fontSize: 14, fill: 0x000000 }); // Adjust font properties as needed
+            item_text_sprite[i].anchor.set(0.5);
+            app.stage.addChild(item_text_sprite[i]);
     }
     const all_item = new Array(36).fill(null);
 
@@ -202,6 +230,7 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
     const keyA = 65;
     const keyS = 83;
     const keyD = 68;
+    const keyE = 69;
     let mouseX = 0;
     let mouseY = 0;
     let started = 0;
@@ -212,12 +241,51 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
         mouseY = Math.floor(((event.clientY - window.innerHeight / 2)/2 + player.y)/ 20)*20; // Adjust mouseY using the offset
         started = 1;
     });
-    
-    window.addEventListener('keydown', (event) => {
+    let click=true;
+    let open_bag=false;
+    window.addEventListener('keydown', async (event) => {
         const keyCode = event.keyCode;
     
         if ([keyW, keyA, keyS, keyD].includes(keyCode)) {
             keys[keyCode] = true;
+        }if (keyCode == keyE&&click==true&&open_bag==false) {
+            for(let i=-1;i<=1;i++){
+                item_bag[i+1] = await drawobj(window.innerWidth / 4, window.innerHeight/4 + i * 50, 'images/item_bar.png', 1, app);
+                item_bag[i+1].anchor.set(0.5, 1);
+                item_bag[i+1].scale.set(0.3);
+            }
+            for(let i = 9; i < 36; i++){
+                if (item_box.items[i]){
+                    item_sprite[i] = await drawobj(window.innerWidth / 4 - 200 + (i % 9) * 50, window.innerHeight / 4 + Math.floor(i / 9)* 50, item_box.items[i].texture, item_box.items[i].size, app);
+                }
+            }
+            for (let i = 9; i < 36; i++) {
+                item_text_sprite[i] = new PIXI.Text('', { fontFamily: 'fantasy', fontSize: 14, fill: 0x000000 }); // Adjust font properties as needed
+                item_text_sprite[i].anchor.set(0.5);
+                app.stage.addChild(item_text_sprite[i]);
+            }
+            click=false;
+            open_bag=true;
+        }else if(keyCode == keyE&&click==true&&open_bag==true){
+            for (let i = -1; i <= 1; i++) {
+                if (item_bag[i+1]) {
+                    app.stage.removeChild(item_bag[i+1]);
+                    item_bag[i+1] = null;
+                }
+            }
+        
+            for (let i = 9; i < 36; i++) {
+                if (item_sprite[i]) {
+                    app.stage.removeChild(item_sprite[i]);
+                    item_sprite[i] = null;
+                }
+            }
+        
+            for (let i = 9; i < 36; i++) {
+                app.stage.removeChild(item_text_sprite[i]);
+            }
+            click=false;
+            open_bag=false;
         }
     });
     
@@ -225,13 +293,18 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
         const keyCode = event.keyCode;
         if ([keyW, keyA, keyS, keyD].includes(keyCode)) {
             keys[keyCode] = false;
+        }if (keyCode == keyE) {
+            click=true;
         }
     });
     let speed = 10;
     player.rotation=0;
-    let players_float=1;
     let time_count=0;
+    let move_item = new Array(800).fill(false).map(() => new Array(800).fill(false));
+    let start_time = new Array(800).fill(-1).map(() => new Array(800).fill(-1));
+    let player_hitting=false;
     app.ticker.add(async () => {
+        //slow down speed when go to some area
         let targetRotation = player.rotation;
         if (willCollide(player.x, player.y, objectMap, 4, 1)) {
             speed = 1; 
@@ -239,78 +312,122 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
         if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)]==1){
             speed /= 2; 
         }
-        if(started==1){
-            get_item(started, mouseX, mouseY, objectMap, item_box, item_sprite, window, all_item,app);
-            started=0;
+        //get item
+        if (started == 1 && player_hitting == false&&
+            Math.floor(mouseX / 20) >= Math.floor(player.x / 20) - 6 &&
+            Math.floor(mouseX / 20) <= Math.floor(player.x / 20) + 6 &&
+            Math.floor(mouseY / 20) >= Math.floor(player.y / 20) - 6 &&
+            Math.floor(mouseY / 20) <= Math.floor(player.y / 20) + 6) {
+            get_item(mouseX, mouseY, objectMap, item_box, item_sprite, window, all_item, app,open_bag)
+                .then((getted) => {
+                    if (getted) {
+                        move_item[Math.floor(mouseY / 20)][Math.floor(mouseX / 20)] = true;
+                        player_hitting = true;
+                        const angle = Math.atan2(Math.floor(mouseY/20) - Math.floor(player.y/20), Math.floor(mouseX/20) - Math.floor(player.x/20));
+                        player.rotation = angle + Math.PI/2;
+                        while(player.rotation<0||player.rotation>2*Math.PI){
+                            if(player.rotation<0){
+                                player.rotation+=2*Math.PI;
+                            }
+                            else{
+                                
+                                player.rotation-=2*Math.PI;
+                            }
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error occurred while getting item:", error);
+                });
 
-        }
-        let newX = player.x;
-        let newY = player.y;
-        if (keys[keyW]) {
-            newY -= speed;
-            targetRotation = keys[keyD] ? Math.PI / 4 : 0;
-        } 
-        if (keys[keyA]) {
-            newX -= speed;
-            targetRotation = keys[keyW] ? -Math.PI / 4 : -Math.PI / 2;
-        } 
-        if (keys[keyS]) {
-            newY += speed;
-            targetRotation = keys[keyA] ? -3 * Math.PI / 4 : Math.PI;
-        } 
-        if (keys[keyD]) {
-            newX += speed;
-            targetRotation = keys[keyS] ? 3 * Math.PI / 4 : keys[keyW] ? Math.PI / 4 : Math.PI / 2;
-        }
-        if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 1&&newY!=player.y) {
-            if (time_count === 20) {
-                players_float *= -1;
-                time_count = 0;
-            }
-            newX += Math.sin(time_count * 0.1) * players_float; 
-        }else if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 1) {
-            if (time_count === 20) {
-                players_float *= -1;
-                time_count = 0;
-            }
-            newY += Math.sin(time_count * 0.1) * players_float ; 
-        }
-        if (
-            willCollideWithTree(player.x, newY, objectMap) || 
-            willCollideWithAnimal(player.x, newY, animalMap) 
-        ) {
-            newY=player.y;
-        }
-        if (
-            willCollideWithTree(newX, player.y, objectMap) || 
-            willCollideWithAnimal(newX, player.y, animalMap)  
-        ) {
-            newX=player.x;
-        }
-        if (
-            (newX >= 0 && newX < 800 * 20 && 
-            newY >= 0 && newY < 800 * 20 && 
-            !willCollideWithTree(newX, newY, objectMap) && 
-            !willCollideWithAnimal(newX, newY, animalMap) )&&(
-                newX!=player.x||newY!=player.y)
-        ) {
-            if (!animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]) {
-                animalMap.moveObject(Math.floor(player.x / 20), Math.floor(player.y / 20), Math.floor(newX / 20), Math.floor(newY / 20));
-            }
             
-            player.x = newX;
-            player.y = newY;
-        
         }
-            let delta = targetRotation - player.rotation;
-            if (delta > Math.PI) {
-                delta -= 2 * Math.PI;
-            } else if (delta < -Math.PI) {
-                delta += 2 * Math.PI;
+        started = 0;
+        for (let y = 0; y < move_item.length; y++) {
+            for (let x = 0; x < move_item[y].length; x++) {
+                if (move_item[y][x] == true) {
+                    if (start_time[y][x] == -1) {
+                        start_time[y][x] = time_count;
+                    }
+                    const time_used = time_count - start_time[y][x];
+                    const duration = 50; 
+        
+                    if (time_used <= duration) {
+                        const newX = obj_sprite[y][x].x + Math.sin(time_used); 
+                        obj_sprite[y][x].x = newX;
+                    } else {
+                        move_item[y][x] = false;
+                        start_time[y][x] = -1;
+                        player_hitting=false;
+                    }
+                }
             }
-            const rotationSpeed = 0.05; 
-            player.rotation += delta * rotationSpeed;
-
+        }
+        //player movement
+        if(player_hitting==false)
+        {let newX = player.x;
+            let newY = player.y;
+            if (keys[keyW]) {
+                newY -= speed;
+                targetRotation = keys[keyD] ? Math.PI / 4 : 0;
+            } 
+            if (keys[keyA]) {
+                newX -= speed;
+                targetRotation = keys[keyW] ? -Math.PI / 4 : -Math.PI / 2;
+            } 
+            if (keys[keyS]) {
+                newY += speed;
+                targetRotation = keys[keyA] ? -3 * Math.PI / 4 : Math.PI;
+            } 
+            if (keys[keyD]) {
+                newX += speed;
+                targetRotation = keys[keyS] ? 3 * Math.PI / 4 : keys[keyW] ? Math.PI / 4 : Math.PI / 2;
+            }if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 2) {
+                play_obj.hp--;
+                updateHPBar(player_hpBar, play_obj.hp, play_obj.full_hp);
+            }
+            if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 1&&newY!=player.y) {
+                newX += Math.sin(time_count* 0.1) ; 
+            }else if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 1) {
+                newY += Math.sin(time_count * 0.1) ; 
+            }
+            if (
+                willCollideWithTree(player.x, newY, objectMap) || 
+                willCollideWithAnimal(player.x, newY, animalMap) 
+            ) {
+                newY=player.y;
+            }
+            if (
+                willCollideWithTree(newX, player.y, objectMap) || 
+                willCollideWithAnimal(newX, player.y, animalMap)  
+            ) {
+                newX=player.x;
+            }
+            if (
+                (newX >= 0 && newX < 800 * 20 && 
+                newY >= 0 && newY < 800 * 20 && 
+                !willCollideWithTree(newX, newY, objectMap) && 
+                !willCollideWithAnimal(newX, newY, animalMap) )&&(
+                    newX!=player.x||newY!=player.y)
+            ) {
+                if (!animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]) {
+                    animalMap.moveObject(Math.floor(player.x / 20), Math.floor(player.y / 20), Math.floor(newX / 20), Math.floor(newY / 20));
+                }
+                
+                player.x = newX;
+                player.y = newY;
+            
+            }
+                let delta = targetRotation - player.rotation;
+                if (delta > Math.PI) {
+                    delta -= 2 * Math.PI;
+                } else if (delta < -Math.PI) {
+                    delta += 2 * Math.PI;
+                }
+                const rotationSpeed = 0.05; 
+                player.rotation += delta * rotationSpeed;
+            }
+        //let the screen follow the player
         app.renderer.resize(window.innerWidth, window.innerHeight);
         app.stage.pivot.x = player.x;
         app.stage.pivot.y = player.y;
@@ -320,26 +437,55 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
         player_hpBar.y=player.y+ window.innerHeight/4-120;
         itemBar.x = player.x ;
         itemBar.y = player.y + window.innerHeight/4-40; 
+        // editing the bar item text
         
-        for (let i = 0; i < 9; i++) {
-            if (item_sprite[i]) {
-                item_sprite[i].x = itemBar.x - 200 + i * 50; 
-                item_sprite[i].y = itemBar.y - 25;
-                itemAmountTexts[i].text = item_box.items_amount[i];
-                if(item_box.items_amount[i]>999){
-                    itemAmountTexts[i].text=999;  
-                }if(item_box.items_amount[i]>99){
-                    itemAmountTexts[i].x = item_sprite[i].x + 10;
-                    itemAmountTexts[i].y = item_sprite[i].y + 15;  
-                }else if(item_box.items_amount[i]>9){
-                    itemAmountTexts[i].x = item_sprite[i].x + 14;
-                    itemAmountTexts[i].y = item_sprite[i].y + 15;  
-                }else{
-                    itemAmountTexts[i].x = item_sprite[i].x + 17;
-                    itemAmountTexts[i].y = item_sprite[i].y + 15;  
+        if(player_hitting==false)
+        {   for (let i = 0; i < 9; i++) {
+                if (item_sprite[i]) {
+                    item_sprite[i].x = itemBar.x - 200 + i * 50; 
+                    item_sprite[i].y = itemBar.y - 25;
+                    item_text_sprite[i].text = item_box.items_amount[i];
+                    if(item_box.items_amount[i]>999){
+                        item_text_sprite[i].text=999;  
+                    }if(item_box.items_amount[i]>99){
+                        item_text_sprite[i].x = item_sprite[i].x + 10;
+                        item_text_sprite[i].y = item_sprite[i].y + 15;  
+                    }else if(item_box.items_amount[i]>9){
+                        item_text_sprite[i].x = item_sprite[i].x + 14;
+                        item_text_sprite[i].y = item_sprite[i].y + 15;  
+                    }else{
+                        item_text_sprite[i].x = item_sprite[i].x + 17;
+                        item_text_sprite[i].y = item_sprite[i].y + 15;  
+                    }
+                }
+            }
+            if(open_bag){
+                for(let i=-1;i<=1;i++){
+                    item_bag[i+1].x = player.x ;
+                    item_bag[i+1].y = player.y + window.innerHeight/4 - 140 + i * 50; 
+                }
+                for (let i = 9; i < 36; i++) {
+                    if (item_sprite[i]) {
+                        item_sprite[i].x = item_bag[0].x - 200 + i%9 * 50; 
+                        item_sprite[i].y = item_bag[0].y - 75 + Math.floor(i/9) * 50;
+                        item_text_sprite[i].text = item_box.items_amount[i];
+                        if(item_box.items_amount[i]>999){
+                            item_text_sprite[i].text=999;  
+                        }if(item_box.items_amount[i]>99){
+                            item_text_sprite[i].x = item_sprite[i].x + 10;
+                            item_text_sprite[i].y = item_sprite[i].y + 15;  
+                        }else if(item_box.items_amount[i]>9){
+                            item_text_sprite[i].x = item_sprite[i].x + 14;
+                            item_text_sprite[i].y = item_sprite[i].y + 15;  
+                        }else{
+                            item_text_sprite[i].x = item_sprite[i].x + 17;
+                            item_text_sprite[i].y = item_sprite[i].y + 15;  
+                        }
+                    }
                 }
             }
         }
+        //animal movement
         speed = 10;
         for (let i = 0; i < 800; i++) {
             for (let j = 0; j < 800; j++) {
@@ -352,17 +498,9 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
                     let newX = animal_sprite[i][j].x +moveX;
                     let newY = animal_sprite[i][j].y +moveY;
                     if (map.mapData[i][j] == 1&&newY!=animal_sprite[i][j].y) {
-                        if (time_count == 20+i*5+j*3) {
-                            players_float *= -1;
-                            time_count = i*5+j*3;
-                        }
-                        newX += Math.sin(time_count * 0.1) * players_float; 
+                        newX += Math.sin((time_count+i*5+j*3) * 0.1); 
                     }else if (map.mapData[i][j] == 1) {
-                        if (time_count === 20+i*5+j*3) {
-                            players_float *= -1;
-                            time_count = i*5+j*3;
-                        }
-                        newY += Math.sin(time_count * 0.1) * players_float ; 
+                        newY += Math.sin((time_count+i*5+j*3) * 0.1); 
                     }
                     if (
                         newX >= 0 && newX < 800 * 20 && 
@@ -390,8 +528,11 @@ async function get_item(started, mouseX, mouseY, objectMap, item_box, item_sprit
                 }
             }
         }
-
+        //counting time
         time_count++;
+        if(time_count== Number.MAX_SAFE_INTEGER){
+            time_count=0;
+        }
         
     });
     

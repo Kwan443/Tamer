@@ -118,9 +118,8 @@ class Map {
     getMapData(){
         return this.mapData;
     }
-    createMap(mapData) {
-        const tileSize = 20;
-
+    createMap(mapData,tileSize=20) {
+        let tile= new Array(800).fill(null).map(() => new Array(800).fill(null));
         for (let y = 0; y < mapData.length; y++) {
             for (let x = 0; x < mapData[y].length; x++) {
                 const tileType = mapData[y][x];
@@ -147,14 +146,15 @@ class Map {
                         break;
                 }
 
-                const tile = new PIXI.Graphics();
-                tile.beginFill(color);
-                tile.drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
-                tile.endFill();
-
-                this.mapContainer.addChild(tile);
+                tile[y][x] = new PIXI.Graphics();
+                tile[y][x].beginFill(color);
+                tile[y][x].drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                tile[y][x].endFill();
+                
+                this.mapContainer.addChild(tile[y][x]);
             }
         }
+        return tile;
     }
 }
 

@@ -84,11 +84,11 @@ async function get_item(mouseX, mouseY, objectMap, item_box, item_sprite, window
     if (item_id) {
         const test = item_box.setValue(all_items[item_id]);
         if(test=>0&&test<9) {
-            item_sprite[test] = await drawobj(window.innerWidth / 4 - 200 + test * 50, window.innerHeight / 2 - 65, all_items[item_id].texture, all_items[item_id].size, app);
+            item_sprite[test] = await drawobj(-1000,-1000, all_items[item_id].texture, all_items[item_id].size, app);
             return true;
         }
         if(open_bag==true&&test>9&&test<36){
-            item_sprite[test] = await drawobj(window.innerWidth / 4 - 200 + (test % 9) * 50, window.innerHeight / 2 - 75 + Math.floor(i/9) * 50, all_items[item_id].texture, all_items[item_id].size, app);
+            item_sprite[test] = await drawobj(-1000,-1000, all_items[item_id].texture, all_items[item_id].size, app);
             return true;
         }
         return true;
@@ -150,7 +150,7 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     const map = new Map(app);
     
     // make a players
-    const player = await drawobj(Math.random() * 800 * 20, Math.random() * 800 * 20, 'images/player.png', 60, app); 
+    const player = await drawobj(0,0, 'images/player.png', 60, app); 
     //Math.random() * 800 * 20, Math.random() * 800 * 20
 
 
@@ -231,6 +231,7 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     const keyS = 83;
     const keyD = 68;
     const keyE = 69;
+    const keyM = 77;
     let mouseX = 0;
     let mouseY = 0;
     let started = 0;
@@ -243,6 +244,12 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     });
     let click=true;
     let open_bag=false;
+    let open_map=false;
+    let tile = new PIXI.Graphics();
+    let player_point = new PIXI.Graphics();
+    
+    
+    let first_time_gen_map=true;
     window.addEventListener('keydown', async (event) => {
         const keyCode = event.keyCode;
     
@@ -287,13 +294,68 @@ function updateHPBar(hpBar, currentHP, maxHP) {
             click=false;
             open_bag=false;
         }
+        if (keyCode == keyM && click == true && open_map == false) {
+            const tileSize = 0.8;
+            
+        
+            for (let y = 0; y < map.mapData.length; y++) {
+                for (let x = 0; x < map.mapData[y].length; x++) {
+                    const tileType = map.mapData[y][x];
+                    let color;
+        
+                    switch (tileType) {
+                        case 0:
+                            color = Math.random() > 0.1 ? 0x5c8852 : 0x80735a; // grass
+                            break;
+                        case 1:
+                            color = 0x4e82ff; // water
+                            break;
+                        case 2:
+                            color = 0xffa500; // lava
+                            break;
+                        case 3:
+                            color = 0x8c8c8c; // stone
+                            break;
+                        case 4:
+                            color = 0x300542; // obsidian
+                            break;
+                        default:
+                            color = 0xffffff; // Default color
+                            break;
+                    }
+        
+                    tile.beginFill(color, 0.75);
+                    tile.drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                    tile.endFill();
+                }
+            }
+            player_point.beginFill(0x00FF00); // Green color
+            player_point.drawCircle(0, 0, 5); // Draw a circle with radius 5
+            player_point.endFill();
+            
+            player_point.x = player.x*1.04-400*0.8; 
+            player_point.y = player.y*1.04-400*0.8; 
+            
+            if(first_time_gen_map){
+                app.stage.addChild(tile);
+                app.stage.addChild(player_point);
+                first_time_gen_map=false;
+            }
+            click=false;
+            open_map=true;
+        }else if (keyCode == keyM &&click==true&&open_map==true){
+            player_point.clear(); 
+            tile.clear(); 
+            click=false;
+            open_map=false;
+        }
     });
     
     window.addEventListener('keyup', (event) => {
         const keyCode = event.keyCode;
         if ([keyW, keyA, keyS, keyD].includes(keyCode)) {
             keys[keyCode] = false;
-        }if (keyCode == keyE) {
+        }if (keyCode == keyE||keyCode == keyM) {
             click=true;
         }
     });
@@ -483,6 +545,11 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                         }
                     }
                 }
+            }if(open_map==true){
+                tile.x = player.x-400*0.8;
+                tile.y = player.y-400*0.8;
+                player_point.x = player.x*1.04-400*0.8; 
+                player_point.y = player.y*1.04-400*0.8; 
             }
         }
         //animal movement

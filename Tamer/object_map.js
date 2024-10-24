@@ -75,6 +75,8 @@ export class ObjectMap {
 		if (gameObject) {
 			this.map[newY][newX] = this.map[y][x];
 			this.map[y][x] = null;
+			this.map[newY][newX].x=newX;
+			this.map[newY][newX].y=newY;
 		}
 	}
 }

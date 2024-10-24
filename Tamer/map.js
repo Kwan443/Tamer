@@ -150,7 +150,6 @@ class Map {
                 tile[y][x].beginFill(color);
                 tile[y][x].drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
                 tile[y][x].endFill();
-                
                 this.mapContainer.addChild(tile[y][x]);
             }
         }

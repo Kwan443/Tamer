@@ -21,26 +21,26 @@ async function deleteobj(obj,sprite,app){
     app.stage.removeChild(sprite);
     sprite = null;
 }
-// function logMapDataNearPlayer(playerX, playerY, mapData, radius) {
-//     const mapSize = mapData.length;
-//     const startX = Math.max(0, playerX - radius);
-//     const endX = Math.min(mapSize - 1, playerX + radius);
-//     const startY = Math.max(0, playerY - radius);
-//     const endY = Math.min(mapSize - 1, playerY + radius);
+function logMapDataNearPlayer(playerX, playerY, mapData, radius) {
+    const mapSize = mapData.length;
+    const startX = Math.max(0, playerX - radius);
+    const endX = Math.min(mapSize - 1, playerX + radius);
+    const startY = Math.max(0, playerY - radius);
+    const endY = Math.min(mapSize - 1, playerY + radius);
 
-//     console.log('Map data near player:');
-//     console.log('start');
-//     for (let y = startY; y <= endY; y++) {
-//         let row = '';
-//         for (let x = startX; x <= endX; x++) {
-//             if(mapData[y][x]!=null)
-//                 row += mapData[y][x].number + ' ';
-//             else    row += 0 + ' ';
-//         }
-//         console.log(y+':'+row);
-//     }
-//     console.log('end');
-// }
+    console.log('Map data near player:');
+    console.log('start');
+    for (let y = startY; y <= endY; y++) {
+        let row = '';
+        for (let x = startX; x <= endX; x++) {
+            if(mapData[y][x]!=null)
+                row += mapData[y][x].number + ' ';
+            else    row += 0 + ' ';
+        }
+        console.log(y+':'+row);
+    }
+    console.log('end');
+}
 function willCollide(x, y,objectMap,num,collisionAreawidth,collisionAreaheight=collisionAreawidth) {
     const x_new = Math.floor(x / 20);
     const y_new = Math.floor(y / 20);
@@ -150,7 +150,7 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     const map = new Map(app);
     
     // make a players
-    const player = await drawobj(0,0, 'images/player.png', 60, app); 
+    const player = await drawobj(Math.random() * 800 * 20, Math.random() * 800 * 20, 'images/player.png', 60, app); 
     //Math.random() * 800 * 20, Math.random() * 800 * 20
 
 
@@ -188,7 +188,6 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     }
     let play_obj=new OBJ.Player(Math.floor(player.x / 20), Math.floor(player.y / 20));
     animalMap.addObject(play_obj);
-
 
     // make an item bar
     const itemBar = await drawobj(window.innerWidth / 4, window.innerHeight/2 - 40, 'images/item_bar.png', 1, app);
@@ -453,9 +452,10 @@ function updateHPBar(hpBar, currentHP, maxHP) {
             }else if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 1) {
                 newY += Math.sin(time_count * 0.1) ; 
             }
+            //logMapDataNearPlayer(Math.floor(player.x / 20),Math.floor(player.y / 20),animalMap.map,6);
             if (
                 willCollideWithTree(player.x, newY, objectMap) || 
-                willCollideWithAnimal(player.x, newY, animalMap) 
+                willCollideWithAnimal(player.x, newY, animalMap)
             ) {
                 newY=player.y;
             }
@@ -600,7 +600,48 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         if(time_count== Number.MAX_SAFE_INTEGER){
             time_count=0;
         }
-        
+        //layer editing
+        if(time_count%100==0){
+            for (let i = 0; i < 800; i++) {
+                for (let j = 0; j < 800; j++) {
+                if(obj_sprite[i][j])
+                    app.stage.addChildAt(obj_sprite[i][j], app.stage.children.length); 
+                if(animal_sprite[i][j])
+                    app.stage.addChildAt(animal_sprite[i][j], app.stage.children.length); 
+                if(i==Math.floor(player.y / 20)&&j==Math.floor(player.x / 20))
+                    app.stage.addChildAt(player, app.stage.children.length); 
+            }}
+            app.stage.addChildAt(itemBar, app.stage.children.length);
+            
+            for(let i = 0; i < 9; i++){
+                if (item_box.items[i]){
+                    app.stage.addChildAt(item_sprite[i], app.stage.children.length);
+                    app.stage.addChildAt(item_text_sprite[i], app.stage.children.length);
+                    
+                }
+            }
+            
+            app.stage.addChildAt(player_hpBar, app.stage.children.length);
+            if(open_bag){
+                for(let i=0;i<3;i++){
+                    app.stage.addChildAt(item_bag[i], app.stage.children.length);
+                }
+                for(let i = 9; i < 36; i++){
+                    if (item_box.items[i]){
+                        app.stage.addChildAt(item_sprite[i], app.stage.children.length);
+                        app.stage.addChildAt(item_text_sprite[i], app.stage.children.length);
+                    }
+                }
+            }
+            app.stage.addChildAt(tile, app.stage.children.length);
+            app.stage.addChildAt(player_point, app.stage.children.length);
+            app.renderer.render(app.stage);
+        }
+        if(open_map&&open_bag&&app.stage.getChildIndex(tile)<app.stage.getChildIndex(item_bag[0])){
+            app.stage.addChildAt(tile, app.stage.children.length);
+            app.stage.addChildAt(player_point, app.stage.children.length);
+            app.renderer.render(app.stage);
+        }
     });
     
 })();

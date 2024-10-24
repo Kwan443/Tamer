@@ -1,5 +1,11 @@
 import { Item_name } from './item.js';
+export const State_id={
+    STOP: 0 ,
+    EAT: 1 ,
+    DRINK: 2,
+    MOVE: 3
 
+}
 export const Object_name = {
     TREE1: 1,
     TREE2: 2,
@@ -72,6 +78,10 @@ export class Animal extends Object {
         this.foodID = foodID;
         this.movement=0;
         this.speed = speed;
+        this.target_x=-1;
+        this.target_y=-1;
+        this.state = State_id.STOP;
+        this.path=[];
     }
 
     move() {
@@ -113,42 +123,36 @@ export class Dog extends Animal {
     constructor( x, y) {
         super(Object_name.DOG, x, y, 'images/dog.png',40,0,0,  [FoodID.BONES],3);
     }
-
 }
 
 export class Cow extends Animal {
     constructor(x, y) {
         super(Object_name.COW, x, y, 'images/cow.png',80,0,0, [FoodID.GRASS],3);
     }
-
 }
 
 export class Pig extends Animal {
     constructor(x, y) {
         super(Object_name.PIG, x, y, 'images/pig.png',60,0,0, [FoodID.MUSHROOM],3);
     }
-
 }
 
 export class Rabbit extends Animal {
     constructor(x, y) {
         super(Object_name.RABBIT, x, y, 'images/rabbit.png',20,0,0, [FoodID.CARROTS],3);
     }
-
 }
 
 export class Sheep extends Animal {
     constructor(x, y) {
         super(Object_name.SHEEP, x, y, 'images/sheep.png',60,0,0, [FoodID.GRASS],3);
     }
-
 }
 
 export class SoulFox extends Animal {
     constructor(x, y) {
         super(Object_name.SOUL_FOX, x, y, 'images/soul_fox.png',100,0,0, [FoodID.SOULS],3);
     }
-
 }
 export class Player extends Animal{
     constructor(x, y) {

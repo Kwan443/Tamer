@@ -152,10 +152,6 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     // make a players
     const player = await drawobj(Math.random() * 800 * 20, Math.random() * 800 * 20, 'images/player.png', 60, app); 
     //Math.random() * 800 * 20, Math.random() * 800 * 20
-
-
-
-
     //make a object map
     const objectMap = new ObjectMap(800, 800, app);
     const animalMap = new ObjectMap(800, 800, app);

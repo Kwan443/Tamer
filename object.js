@@ -3,8 +3,9 @@ export const State_id={
     STOP: 0 ,
     EAT: 1 ,
     DRINK: 2,
-    MOVE: 3
-
+    MOVE: 3,
+    RUN: 4,
+    RANDOM_MOVE: 5
 }
 export const Object_name = {
     TREE1: 1,
@@ -80,10 +81,23 @@ export class Animal extends Object {
         this.speed = speed;
         this.target_x=-1;
         this.target_y=-1;
-        this.state = State_id.STOP;
+        this.state = State_id.RANDOM_MOVE;
         this.path=[];
     }
 
+    normal_movement(){
+        if(this.state == State_id.RANDOM_MOVE){
+            const randomNumber = Math.random(); 
+            if (randomNumber > 0.99) {
+                this.movement= Math.floor(Math.random() * 9); 
+            } 
+        }
+    }
+    change_move(){
+        if(this.state == State_id.RANDOM_MOVE){
+            this.movement= Math.floor(Math.random() * 9); 
+        }
+    }
     move() {
         let moveX=0, moveY=0;
         if(this.movement==1){
@@ -108,15 +122,8 @@ export class Animal extends Object {
             moveX= -this.speed;
             moveY= -this.speed;
         }
-        
-        const randomNumber = Math.random(); 
-        if (randomNumber > 0.99) {
-            this.movement= Math.floor(Math.random() * 9); 
-        }
+        this.normal_movement();
         return { moveX, moveY };
-    }
-    change_move(){
-        this.movement= Math.floor(Math.random() * 9); 
     }
 }
 export class Dog extends Animal {

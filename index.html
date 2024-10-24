@@ -41,11 +41,39 @@
         display: none;
     }
 
+    #game-over {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        z-index: 9999;
+    }
+    #game-over h1 {
+        font-size: 10em; 
+        text-align: center;
+    }
+
     button {
         display: block;
         margin: 20px auto;
         padding: 30px 60px; 
         font-size: 3em; 
+    }
+
+    #start-btn {
+        display: block;
+        margin: 20px auto;
+        padding: 30px 60px; 
+        font-size: 3em;
+        z-index: 9999;
     }
 </style>
 </head>
@@ -58,7 +86,9 @@
 <div id="game-container">
     <!-- Main.js will be loaded dynamically here when the Start button is clicked -->
 </div>
-
+<div id="game-over" style="display: none;">
+        <h1>Game Over!</h1>
+    </div>
 <script>
     let gameStarted = false;
     let gameScript;

@@ -234,8 +234,8 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     let mouseY = 0;
     let started = 0;
     window.addEventListener('mousemove', (event) => {
-        mouseX = Math.floor(((event.clientX - window.innerWidth / 2)/2 + player.x)/ 20)*20; // Adjust mouseX using the offset
-        mouseY = Math.floor(((event.clientY - window.innerHeight / 2)/2 + player.y)/ 20)*20; // Adjust mouseY using the offset
+        mouseX = Math.floor(((event.clientX - window.innerWidth / 2)/2 + player.x)/ 20)*20; 
+        mouseY = Math.floor(((event.clientY - window.innerHeight / 2)/2 + player.y)/ 20)*20; 
     });
     window.addEventListener('click', (event) => {
         started = 1;
@@ -250,7 +250,6 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     let first_time_gen_map=true;
     window.addEventListener('keydown', async (event) => {
         const keyCode = event.keyCode;
-    
         if ([keyW, keyA, keyS, keyD].includes(keyCode)) {
             keys[keyCode] = true;
         }if (keyCode == keyE&&click==true&&open_bag==false) {
@@ -443,8 +442,12 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                 newX += speed;
                 targetRotation = keys[keyS] ? 3 * Math.PI / 4 : keys[keyW] ? Math.PI / 4 : Math.PI / 2;
             }if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 2) {
-                play_obj.hp--;
+                play_obj.hp-=20;
                 updateHPBar(player_hpBar, play_obj.hp, play_obj.full_hp);
+                if(play_obj.hp==0){
+                    app.ticker.stop();
+                    document.getElementById('game-over').style.display = 'block';
+                }
             }
             if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 1&&newY!=player.y) {
                 newX += Math.sin(time_count* 0.1) ; 
@@ -579,7 +582,7 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                         newY += Math.sin((time_count+i*5+j*3) * 0.1); 
                     }
                     
-                if(willCollideWithTree(newX, newY, objectMap)){
+                if(willCollideWithTree(animal_sprite[i][j].x, animal_sprite[i][j].y, objectMap)){
                     if(newY>400){
                         while(willCollideWithTree(newX, newY, objectMap)){
                             newY-=20;

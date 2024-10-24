@@ -169,20 +169,24 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         SoulFox: 1
     };
     
-    animalMap.generateAnimal(numOfEachAnimal);
+    animalMap.generateAnimal(numOfEachAnimal,map);
     const obj_sprite = new Array(800).fill(null).map(() => new Array(800).fill(null));
     
     const animal_sprite = new Array(800).fill(null).map(() => new Array(800).fill(null));
+    
+    for (let y = 0; y < 800; y++) {
+        for (let x = 0; x < 800; x++) {
+            if(animalMap.map[y][x])
+                animal_sprite[y][x] = await drawobj(x*20+animalMap.map[y][x].x_adding, y*20+animalMap.map[y][x].y_adding, animalMap.map[y][x].texture, animalMap.map[y][x].size, app);
+    }}
     for (let y = 0; y < 800; y++) {
         for (let x = 0; x < 800; x++) {
             if(objectMap.map[y][x])
                 obj_sprite[y][x] = await drawobj(x*20+objectMap.map[y][x].x_adding, y*20+objectMap.map[y][x].y_adding, objectMap.map[y][x].texture, objectMap.map[y][x].size, app);
-            if(animalMap.map[y][x])
-                animal_sprite[y][x] = await drawobj(x*20+animalMap.map[y][x].x_adding, y*20+animalMap.map[y][x].y_adding, animalMap.map[y][x].texture, animalMap.map[y][x].size, app);
         }
     }
     
-    while(willCollideWithTree(player.x, player.y ,objectMap)||willCollideWithAnimal(player.x, player.y,animalMap)){
+    while(willCollideWithTree(player.x, player.y ,objectMap)||willCollideWithAnimal(player.x, player.y,animalMap)||map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 2){
         player.x = Math.random() * 800 * 20;
         player.y = Math.random() * 800 * 20;
     }
@@ -235,10 +239,10 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     let mouseY = 0;
     let started = 0;
     window.addEventListener('mousemove', (event) => {
-    });
-    window.addEventListener('click', (event) => {
         mouseX = Math.floor(((event.clientX - window.innerWidth / 2)/2 + player.x)/ 20)*20; // Adjust mouseX using the offset
         mouseY = Math.floor(((event.clientY - window.innerHeight / 2)/2 + player.y)/ 20)*20; // Adjust mouseY using the offset
+    });
+    window.addEventListener('click', (event) => {
         started = 1;
     });
     let click=true;
@@ -569,11 +573,25 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                     }else if (map.mapData[i][j] == 1) {
                         newY += Math.sin((time_count+i*5+j*3) * 0.1); 
                     }
+                    
+                if(willCollideWithTree(newX, newY, objectMap)){
+                    if(newY>400){
+                        while(willCollideWithTree(newX, newY, objectMap)){
+                            newY-=20;
+                        }
+                    }else{
+                        while(willCollideWithTree(newX, newY, objectMap)){
+                            newY+=20;
+                        }
+                    }
+
+                }
                     if (
                         newX >= 0 && newX < 800 * 20 && 
-                        newY >= 0 && newY < 800 * 20 
+                        newY >= 0 && newY < 800 * 20
                     ) {
-                        if (animalMap.map[Math.floor(newY / 20)]&&(Math.floor(newY / 20)!=i||Math.floor(newX / 20)!=j)&&animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]==null) {
+                        if (animalMap.map[Math.floor(newY / 20)]&&(Math.floor(newY / 20)!=i||Math.floor(newX / 20)!=j)&&animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]==null
+                    &&!willCollideWithTree(newX, newY, objectMap)&&map.mapData[Math.floor(newY / 20)][Math.floor(newX / 20)] != 2) {
                             animalMap.moveObject(j,i, Math.floor(newX / 20), Math.floor(newY / 20));
                             animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)].x=newX;
                             animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)].y=newY;
@@ -588,9 +606,13 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                         }
                         else {
                             animalMap.map[i][j].change_move();
+                            newX=animal_sprite[i][j].x;
+                            newY=animal_sprite[i][j].y;
                         }
                     }else {
                         animalMap.map[i][j].change_move();
+                        newX=animal_sprite[i][j].x;
+                        newY=animal_sprite[i][j].y;
                     }
                 }
             }
@@ -601,42 +623,6 @@ function updateHPBar(hpBar, currentHP, maxHP) {
             time_count=0;
         }
         //layer editing
-        if(time_count%100==0){
-            for (let i = 0; i < 800; i++) {
-                for (let j = 0; j < 800; j++) {
-                if(obj_sprite[i][j])
-                    app.stage.addChildAt(obj_sprite[i][j], app.stage.children.length); 
-                if(animal_sprite[i][j])
-                    app.stage.addChildAt(animal_sprite[i][j], app.stage.children.length); 
-                if(i==Math.floor(player.y / 20)&&j==Math.floor(player.x / 20))
-                    app.stage.addChildAt(player, app.stage.children.length); 
-            }}
-            app.stage.addChildAt(itemBar, app.stage.children.length);
-            
-            for(let i = 0; i < 9; i++){
-                if (item_box.items[i]){
-                    app.stage.addChildAt(item_sprite[i], app.stage.children.length);
-                    app.stage.addChildAt(item_text_sprite[i], app.stage.children.length);
-                    
-                }
-            }
-            
-            app.stage.addChildAt(player_hpBar, app.stage.children.length);
-            if(open_bag){
-                for(let i=0;i<3;i++){
-                    app.stage.addChildAt(item_bag[i], app.stage.children.length);
-                }
-                for(let i = 9; i < 36; i++){
-                    if (item_box.items[i]){
-                        app.stage.addChildAt(item_sprite[i], app.stage.children.length);
-                        app.stage.addChildAt(item_text_sprite[i], app.stage.children.length);
-                    }
-                }
-            }
-            app.stage.addChildAt(tile, app.stage.children.length);
-            app.stage.addChildAt(player_point, app.stage.children.length);
-            app.renderer.render(app.stage);
-        }
         if(open_map&&open_bag&&app.stage.getChildIndex(tile)<app.stage.getChildIndex(item_bag[0])){
             app.stage.addChildAt(tile, app.stage.children.length);
             app.stage.addChildAt(player_point, app.stage.children.length);

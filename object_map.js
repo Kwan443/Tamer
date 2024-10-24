@@ -34,7 +34,8 @@ export class ObjectMap {
 		}
 	}
 
-	generateAnimal(numOfEachAnimal) {
+	generateAnimal(numOfEachAnimal,base_map) {
+		const mapData = base_map.getMapData();
 		const animals = [
 			OBJ.Dog,
 			OBJ.Cow,
@@ -50,8 +51,8 @@ export class ObjectMap {
 				while (true) {
 					const x = Math.floor(Math.random() * this.width);
 					const y = Math.floor(Math.random() * this.height);
-	
-					if (this.map[y][x] === null) {
+					const tileType = mapData[y][x];
+					if (this.map[y][x] === null&&tileType!=2) {
 						this.addObject(new animalClass(x, y));
 						break;
 					}

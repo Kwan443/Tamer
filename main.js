@@ -151,7 +151,11 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     
     // make a players
     const player = await drawobj(Math.random() * 800 * 20, Math.random() * 800 * 20, 'images/player.png', 60, app); 
-    //Math.random() * 800 * 20, Math.random() * 800 * 2
+    //Math.random() * 800 * 20, Math.random() * 800 * 20
+
+
+
+
     //make a object map
     const objectMap = new ObjectMap(800, 800, app);
     const animalMap = new ObjectMap(800, 800, app);
@@ -165,7 +169,7 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         SoulFox: 1
     };
     
-    animalMap.generateAnimal(numOfEachAnimal);
+    animalMap.generateAnimal(numOfEachAnimal,map);
     const obj_sprite = new Array(800).fill(null).map(() => new Array(800).fill(null));
     
     const animal_sprite = new Array(800).fill(null).map(() => new Array(800).fill(null));
@@ -173,8 +177,7 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         for (let x = 0; x < 800; x++) {
             if(animalMap.map[y][x])
                 animal_sprite[y][x] = await drawobj(x*20+animalMap.map[y][x].x_adding, y*20+animalMap.map[y][x].y_adding, animalMap.map[y][x].texture, animalMap.map[y][x].size, app);
-        }
-    }
+    }}
     for (let y = 0; y < 800; y++) {
         for (let x = 0; x < 800; x++) {
             if(objectMap.map[y][x])
@@ -182,7 +185,7 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         }
     }
     
-    while(willCollideWithTree(player.x, player.y ,objectMap)||willCollideWithAnimal(player.x, player.y,animalMap)){
+    while(willCollideWithTree(player.x, player.y ,objectMap)||willCollideWithAnimal(player.x, player.y,animalMap)||map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 2){
         player.x = Math.random() * 800 * 20;
         player.y = Math.random() * 800 * 20;
     }
@@ -235,10 +238,10 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     let mouseY = 0;
     let started = 0;
     window.addEventListener('mousemove', (event) => {
-    });
-    window.addEventListener('click', (event) => {
         mouseX = Math.floor(((event.clientX - window.innerWidth / 2)/2 + player.x)/ 20)*20; // Adjust mouseX using the offset
         mouseY = Math.floor(((event.clientY - window.innerHeight / 2)/2 + player.y)/ 20)*20; // Adjust mouseY using the offset
+    });
+    window.addEventListener('click', (event) => {
         started = 1;
     });
     let click=true;
@@ -246,6 +249,8 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     let open_map=false;
     let tile = new PIXI.Graphics();
     let player_point = new PIXI.Graphics();
+    
+    
     let first_time_gen_map=true;
     window.addEventListener('keydown', async (event) => {
         const keyCode = event.keyCode;
@@ -293,6 +298,8 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         }
         if (keyCode == keyM && click == true && open_map == false) {
             const tileSize = 0.8;
+            
+        
             for (let y = 0; y < map.mapData.length; y++) {
                 for (let x = 0; x < map.mapData[y].length; x++) {
                     const tileType = map.mapData[y][x];
@@ -565,7 +572,8 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                         moveY/=1.5; 
                     }
                     if (willCollide(animal_sprite[i][j].x, animal_sprite[i][j].y, objectMap, 4, 1)) {
-                        speed = 1; 
+                        moveX/=3; 
+                        moveY/=3; 
                     }
                     let newX = animal_sprite[i][j].x +moveX;
                     let newY = animal_sprite[i][j].y +moveY;
@@ -574,25 +582,25 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                     }else if (map.mapData[i][j] == 1) {
                         newY += Math.sin((time_count+i*5+j*3) * 0.1); 
                     }
-                    let larger_than_half=false;
-                    if(Math.floor(newY / 20)>400){
-                        larger_than_half=true ;
-                    }
-                    if(willCollideWithTree(animal_sprite[i][j].x, animal_sprite[i][j].y, objectMap)||map.mapData[i][j] == 2){
-                        while(willCollideWithTree(newX, newY, objectMap)||map.mapData[i][j] == 2){
-                            if(larger_than_half){
-                                newY-=20;
-                            }
-                            else{
-                                newY+=20;
-                            }
+                    
+                if(willCollideWithTree(newX, newY, objectMap)){
+                    if(newY>400){
+                        while(willCollideWithTree(newX, newY, objectMap)){
+                            newY-=20;
+                        }
+                    }else{
+                        while(willCollideWithTree(newX, newY, objectMap)){
+                            newY+=20;
                         }
                     }
+
+                }
                     if (
                         newX >= 0 && newX < 800 * 20 && 
-                        newY >= 0 && newY < 800 * 20 
+                        newY >= 0 && newY < 800 * 20
                     ) {
-                        if (animalMap.map[Math.floor(newY / 20)]&&(Math.floor(newY / 20)!=i||Math.floor(newX / 20)!=j)&&animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]==null&&!willCollideWithTree(newX, newY, objectMap)&&map.mapData[Math.floor(newY / 20)][Math.floor(newX / 20)] != 2) {
+                        if (animalMap.map[Math.floor(newY / 20)]&&(Math.floor(newY / 20)!=i||Math.floor(newX / 20)!=j)&&animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]==null
+                    &&!willCollideWithTree(newX, newY, objectMap)&&map.mapData[Math.floor(newY / 20)][Math.floor(newX / 20)] != 2) {
                             animalMap.moveObject(j,i, Math.floor(newX / 20), Math.floor(newY / 20));
                             animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)].x=newX;
                             animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)].y=newY;
@@ -612,8 +620,9 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                         }
                     }else {
                         animalMap.map[i][j].change_move();
+                        newX=animal_sprite[i][j].x;
+                        newY=animal_sprite[i][j].y;
                     }
-                    
                 }
             }
         }
@@ -622,9 +631,10 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         if(time_count== Number.MAX_SAFE_INTEGER){
             time_count=0;
         }
-        if(open_map&&open_bag&&app.stage.getChildIndex(tile)<app.stage.getChildIndex(item_bag[0])){
-            app.stage.addChildAt(tile, app.stage.children.length);
-            app.stage.addChildAt(player_point, app.stage.children.length);
+        //layer editing
+        if(open_map&&app.stage.getChildIndex(player_point)!=app.stage.children.length - 1){
+            app.stage.setChildIndex(tile, app.stage.children.length - 1);
+            app.stage.setChildIndex(player_point, app.stage.children.length - 1);
             app.renderer.render(app.stage);
         }
     });

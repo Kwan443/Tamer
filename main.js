@@ -173,7 +173,6 @@ function updateHPBar(hpBar, currentHP, maxHP) {
     const obj_sprite = new Array(800).fill(null).map(() => new Array(800).fill(null));
     
     const animal_sprite = new Array(800).fill(null).map(() => new Array(800).fill(null));
-    
     for (let y = 0; y < 800; y++) {
         for (let x = 0; x < 800; x++) {
             if(animalMap.map[y][x])

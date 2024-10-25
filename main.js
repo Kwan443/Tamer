@@ -601,8 +601,6 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                         if (animalMap.map[Math.floor(newY / 20)]&&(Math.floor(newY / 20)!=i||Math.floor(newX / 20)!=j)&&animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]==null
                     &&!willCollideWithTree(newX, newY, objectMap)&&map.mapData[Math.floor(newY / 20)][Math.floor(newX / 20)] != 2) {
                             animalMap.moveObject(j,i, Math.floor(newX / 20), Math.floor(newY / 20));
-                            animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)].x=newX;
-                            animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)].y=newY;
                             animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)]=animal_sprite[i][j];
                             animal_sprite[i][j]=null;
                             animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)].x = newX;

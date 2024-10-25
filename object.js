@@ -1,11 +1,12 @@
 import { Item_name } from './item.js';
 export const State_id={
     STOP: 0 ,
-    EAT: 1 ,
-    DRINK: 2,
-    MOVE: 3,
-    RUN: 4,
-    RANDOM_MOVE: 5
+    FIND_FOOD: 1 ,
+    FIND_WATER: 2,
+    FOLLOW: 3,
+    RUN_AWAY: 4,
+    FIND_SAME_ANIMAL: 5,
+    RANDOM_MOVE: 6
 }
 export const Object_name = {
     TREE1: 1,
@@ -83,8 +84,55 @@ export class Animal extends Object {
         this.target_y=-1;
         this.state = State_id.RANDOM_MOVE;
         this.path=[];
+        this.index=0;
+        this.changed=false;
     }
+    search_target(map,animal_map,obj_map){
+        const rows = map.length;
+        const cols = map[0].length;
+        const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+        const queue = [{ x: this.x, y: this.y, distance: 0 }];
+        const directions = [
+            [-1, 0], [1, 0], [0, -1], [0, 1], 
+            [-1, -1], [-1, 1], [1, -1], [1, 1] 
+        ];
+        while (queue.length > 0) {
+            const current = queue.shift();
+            if (this.state==State_id.FIND_FOOD&&obj_map[current.y][current.x]==Object_name.GRASS
+                ||this.state==State_id.FIND_FOOD&&map[current.y][current.x]==1
+                ||this.state==State_id.FIND_SAME_ANIMAL&&animal_map[current.y][current.x]==this.number) {
+                this.target_x=current.x;
+                this.target_y=current.y ;
+                return true;
+            }
+            visited[current.x][current.y] = true;
+            for (const [dx, dy] of directions) {
+                const newX = current.x + dx;
+                const newY = current.y + dy;
+                let can_go=true;
+                for(let i=-1;i<1;i++){
+                for(let j=-1;j<1;j++){
+                    if(obj_map[current.y]&&obj_map[current.y][current.x]){
+                        if(obj_map[current.y][current.x]==Object_name.TREE1||obj_map[current.y][current.x]==Object_name.TREE2){
+                            can_go=false;
+                        }
+                    }
+                    if(map[current.y]&&map[current.y][current.x]){
+                        if(map[current.y][current.x]==2){
+                            can_go=false;
+                        }
+                    }
+                }
+                }
+                if (newX >= 0 && newX < rows && newY >= 0 && newY < cols && !visited[newX][newY] &&can_go) {
+                    queue.push({ x: newX, y: newY, distance: current.distance + 1 });
+                    visited[newX][newY] = true;
+                }
+            }
+        }
 
+        return false;
+    }
     normal_movement(){
         if(this.state == State_id.RANDOM_MOVE){
             const randomNumber = Math.random(); 
@@ -97,6 +145,9 @@ export class Animal extends Object {
         if(this.state == State_id.RANDOM_MOVE){
             this.movement= Math.floor(Math.random() * 9); 
         }
+    }
+    change_state(){
+        this.state= Math.floor(Math.random() * 6); 
     }
     move() {
         let moveX=0, moveY=0;

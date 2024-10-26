@@ -404,22 +404,25 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         started = 0;
         for (let y = 0; y < move_item.length; y++) {
             for (let x = 0; x < move_item[y].length; x++) {
-                if (move_item[y][x] == true) {
-                    if (start_time[y][x] == -1) {
-                        start_time[y][x] = time_count;
-                    }
-                    const time_used = time_count - start_time[y][x];
-                    const duration = 50; 
-        
-                    if (time_used <= duration) {
-                        const newX = obj_sprite[y][x].x + Math.sin(time_used); 
-                        obj_sprite[y][x].x = newX;
-                    } else {
-                        move_item[y][x] = false;
-                        start_time[y][x] = -1;
-                        player_hitting=false;
+                if(obj_sprite[y]&&obj_sprite[y][x]){
+                    if (move_item[y][x] == true) {
+                        if (start_time[y][x] == -1) {
+                            start_time[y][x] = time_count;
+                        }
+                        const time_used = time_count - start_time[y][x];
+                        const duration = 50; 
+            
+                        if (time_used <= duration) {
+                            const newX = obj_sprite[y][x].x + Math.sin(time_used); 
+                            obj_sprite[y][x].x = newX;
+                        } else {
+                            move_item[y][x] = false;
+                            start_time[y][x] = -1;
+                            player_hitting=false;
+                        }
                     }
                 }
+                    
             }
         }
         //player movement

@@ -559,13 +559,14 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         for (let i = 0; i < 800; i++) {
             for (let j = 0; j < 800; j++) {
                 if (animal_sprite[i][j]) {
+                    
                     if (map.mapData[i]&&map.mapData[i][j] == 2) {
                         animalMap.map[i][j].hp--;
                     }
                     if(animalMap.map[i]&&animalMap.map[i][j].hp==0){
                         deleteobj(animalMap.map[i][j],animal_sprite[i][j],app);
                     }
-                    let { moveX, moveY } =  animalMap.map[i][j].move(); 
+                    let { moveX, moveY } =  animalMap.map[i][j].normal_movement(map.mapData,animalMap.map,objectMap.map); 
                     if (map.mapData[i][j] == 1) {
                         moveX/=1.5; 
                         moveY/=1.5; 

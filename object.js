@@ -82,98 +82,156 @@ export class Animal extends Object {
         this.speed = speed;
         this.target_x=-1;
         this.target_y=-1;
-        this.state = State_id.RANDOM_MOVE;
+        this.state = State_id.FIND_SAME_ANIMAL;
         this.path=[];
         this.index=0;
         this.changed=false;
+        this.changing_move=false;
     }
-    search_target(map,animal_map,obj_map){
+    search_target(map, animal_map, obj_map) {
         const rows = map.length;
         const cols = map[0].length;
         const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
-        const queue = [{ x: this.x, y: this.y, distance: 0 }];
+        const queue = [{ x: this.x, y: this.y, distance: 0, path: [] }];
         const directions = [
-            [-1, 0], [1, 0], [0, -1], [0, 1], 
-            [-1, -1], [-1, 1], [1, -1], [1, 1] 
+            [-1, 0], [1, 0], [0, -1], [0, 1],
+            [-1, -1], [-1, 1], [1, -1], [1, 1]
         ];
+    
         while (queue.length > 0) {
             const current = queue.shift();
-            if (this.state==State_id.FIND_FOOD&&obj_map[current.y][current.x]==Object_name.GRASS
-                ||this.state==State_id.FIND_FOOD&&map[current.y][current.x]==1
-                ||this.state==State_id.FIND_SAME_ANIMAL&&animal_map[current.y][current.x]==this.number) {
-                this.target_x=current.x;
-                this.target_y=current.y ;
+    
+            if (
+                this.state == State_id.FIND_FOOD && obj_map[current.y][current.x] == Object_name.GRASS ||
+                this.state == State_id.FIND_WATER && map[current.y][current.x] == 1 ||
+                this.state == State_id.FIND_SAME_ANIMAL &&
+                animal_map[current.y] &&
+                animal_map[current.y][current.x] &&
+                animal_map[current.y][current.x].number == this.number &&
+                (current.x !== this.x || current.y !== this.y)
+            ) {
+                this.target_x = current.x;
+                this.target_y = current.y;
+                this.path = current.path;
                 return true;
             }
+    
             visited[current.x][current.y] = true;
+    
             for (const [dx, dy] of directions) {
                 const newX = current.x + dx;
                 const newY = current.y + dy;
-                let can_go=true;
-                for(let i=-1;i<1;i++){
-                for(let j=-1;j<1;j++){
-                    if(obj_map[current.y]&&obj_map[current.y][current.x]){
-                        if(obj_map[current.y][current.x]==Object_name.TREE1||obj_map[current.y][current.x]==Object_name.TREE2){
-                            can_go=false;
+                let can_go = true;
+    
+                for (let i = -2; i <= 2; i++) {
+                    for (let j = -2; j <= 2; j++) {
+                        if (obj_map[newY+i] && obj_map[newY+i][newX+j]) {
+                            if (obj_map[newY+i][newX+j] == Object_name.TREE1 || obj_map[newY+i][newX+j] == Object_name.TREE2) {
+                                can_go = false;
+                            }
                         }
-                    }
-                    if(map[current.y]&&map[current.y][current.x]){
-                        if(map[current.y][current.x]==2){
-                            can_go=false;
+                        if (map[newY] && map[newY][newX]) {
+                            if (map[newY][newX] == 2) {
+                                can_go = false;
+                            }
                         }
                     }
                 }
-                }
-                if (newX >= 0 && newX < rows && newY >= 0 && newY < cols && !visited[newX][newY] &&can_go) {
-                    queue.push({ x: newX, y: newY, distance: current.distance + 1 });
+    
+                if (newX >= 0 && newX < rows && newY >= 0 && newY < cols && !visited[newX][newY] && can_go) {
+                    queue.push({ x: newX, y: newY, distance: current.distance + 1, path: [...current.path, newX, newY] });
                     visited[newX][newY] = true;
                 }
             }
         }
-
+    
         return false;
     }
-    normal_movement(){
+    normal_movement(map,animal_map,obj_map){
+        if(this.changing_move==true){
+            this.changing_move=false;
+            return this.move();
+        }
         if(this.state == State_id.RANDOM_MOVE){
             const randomNumber = Math.random(); 
             if (randomNumber > 0.99) {
                 this.movement= Math.floor(Math.random() * 9); 
             } 
         }
-    }
-    change_move(){
-        if(this.state == State_id.RANDOM_MOVE){
-            this.movement= Math.floor(Math.random() * 9); 
+        if(this.state == State_id.FIND_WATER||this.state == State_id.FIND_FOOD||this.state == State_id.FIND_SAME_ANIMAL){
+            if(!this.changed){
+                this.search_target(map,animal_map,obj_map);
+                this.index=0;
+                this.changed=true;
+            }
+            else{
+                if(this.x==this.path[this.index]&&this.y==this.path[this.index+1]){
+                    this.index+=2;
+                }
+                    if(this.x<this.path[this.index]){
+                        this.movement=1;
+                    }else if(this.x>this.path[this.index]){
+                        this.movement=7;
+                    }else{
+                        this.movement=4
+                    }if(this.y<this.path[this.index+1]){
+                        this.movement++;
+                    }else if(this.y>this.path[this.index+1]){
+                        this.movement--;
+                    }
+
+                    if(this.x==this.target_x&&this.y==this.target_y){
+                        this.target_x=-1;
+                        this.target_y=-1;
+                        this.path=[];
+                        this.index=0;
+                        this.changed=false;
+                        this.change_state();
+                    }
+            }
+            return this.move();
         }
     }
+    change_move(){
+            this.movement= Math.floor(Math.random() * 9); 
+            this.changing_move=true;
+
+    }
     change_state(){
-        this.state= Math.floor(Math.random() * 6); 
+        //this.state= Math.floor(Math.random() * 6); 
+        if(this.state==State_id.FIND_WATER||this.state == State_id.FIND_FOOD)
+            this.state= State_id.STOP; 
+        else if(this.state==State_id.FIND_SAME_ANIMAL){
+            this.state= State_id.FIND_SAME_ANIMAL; 
+        }
     }
     move() {
         let moveX=0, moveY=0;
-        if(this.movement==1){
-            moveY= -this.speed;
+        if(this.movement==0){
+            moveX= this.speed;
+            moveY = -this.speed;
+        }
+        else if(this.movement==1){
+            moveX= this.speed;
         }
         else if(this.movement==2){
-            moveX= +this.speed;
-            moveY = -this.speed;
-        }else if(this.movement==3){
-            moveX= this.speed;
-        }else if(this.movement==4){
             moveX= this.speed;
             moveY= this.speed;
+        }else if(this.movement==3){
+            moveY= -this.speed;
+        }else if(this.movement==4){
+
         }else if(this.movement==5){
             moveY= this.speed;
         }else if(this.movement==6){
             moveX= -this.speed;
-            moveY= this.speed;
+            moveY= -this.speed;
         }else if(this.movement==7){
             moveX= -this.speed;
         }else if(this.movement==8){
             moveX= -this.speed;
-            moveY= -this.speed;
+            moveY= this.speed;
         }
-        this.normal_movement();
         return { moveX, moveY };
     }
 }

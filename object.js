@@ -88,6 +88,7 @@ export class Animal extends Object {
         this.changed=false;
         this.changing_movement=false;
         this.state_time=50;
+        this.random_time=100;
     }
     search_target(map, animal_map, obj_map) {
         const rows = map.length;
@@ -216,8 +217,20 @@ export class Animal extends Object {
         return this.move();
     }
     change_move(){
-            this.movement= Math.floor(Math.random() * 9); 
-            this.changing_movement=true;
+        this.movement= Math.floor(Math.random() * 9); 
+        this.changing_movement=true;
+        this.random_time--;
+        if(this.random_time==0){
+            this.random_time=100;
+            this.target_x=-1;
+            this.target_y=-1;
+            this.path=[];
+            this.index=0;
+            this.changed=false;
+            this.change_state();
+
+        }
+
 
     }
     change_state(){
@@ -303,7 +316,8 @@ export class SoulFox extends Animal {
     }
 }
 export class Player extends Animal{
-    constructor(x, y) {
+    constructor(x, y,playerId) {
         super(Object_name.PLAYER, x, y,'images/player.png',100,0,0, [],3);
+        this.playerId=playerId;
     }
 }

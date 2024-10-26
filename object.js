@@ -3,9 +3,9 @@ export const State_id={
     STOP: 0 ,
     FIND_FOOD: 1 ,
     FIND_WATER: 2,
-    FOLLOW: 3,
-    RUN_AWAY: 4,
-    FIND_SAME_ANIMAL: 5,
+    FIND_SAME_ANIMAL: 3,
+    FOLLOW: 4,
+    RUN_AWAY: 5,
     RANDOM_MOVE: 6
 }
 export const Object_name = {
@@ -78,15 +78,16 @@ export class Animal extends Object {
     constructor(number = 0, x, y, texture,size,x_adding,y_adding, foodID = [],speed,full_hp=100) {
         super(number, x, y, texture,size,x_adding,y_adding,full_hp);
         this.foodID = foodID;
-        this.movement=0;
+        this.movement=4;
         this.speed = speed;
         this.target_x=-1;
         this.target_y=-1;
-        this.state = State_id.FIND_SAME_ANIMAL;
+        this.state = State_id.FIND_FOOD;
         this.path=[];
         this.index=0;
         this.changed=false;
-        this.changing_move=false;
+        this.changing_movement=false;
+        this.state_time=50;
     }
     search_target(map, animal_map, obj_map) {
         const rows = map.length;
@@ -102,7 +103,8 @@ export class Animal extends Object {
             const current = queue.shift();
     
             if (
-                this.state == State_id.FIND_FOOD && obj_map[current.y][current.x] == Object_name.GRASS ||
+                this.state == State_id.FIND_FOOD &&
+                obj_map[current.y] && obj_map[current.y][current.x] && obj_map[current.y][current.x].number == Object_name.GRASS ||
                 this.state == State_id.FIND_WATER && map[current.y][current.x] == 1 ||
                 this.state == State_id.FIND_SAME_ANIMAL &&
                 animal_map[current.y] &&
@@ -123,8 +125,8 @@ export class Animal extends Object {
                 const newY = current.y + dy;
                 let can_go = true;
     
-                for (let i = -2; i <= 2; i++) {
-                    for (let j = -2; j <= 2; j++) {
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
                         if (obj_map[newY+i] && obj_map[newY+i][newX+j]) {
                             if (obj_map[newY+i][newX+j] == Object_name.TREE1 || obj_map[newY+i][newX+j] == Object_name.TREE2) {
                                 can_go = false;
@@ -148,8 +150,8 @@ export class Animal extends Object {
         return false;
     }
     normal_movement(map,animal_map,obj_map){
-        if(this.changing_move==true){
-            this.changing_move=false;
+        if(this.changing_movement){
+            this.changing_movement=false;
             return this.move();
         }
         if(this.state == State_id.RANDOM_MOVE){
@@ -157,8 +159,17 @@ export class Animal extends Object {
             if (randomNumber > 0.99) {
                 this.movement= Math.floor(Math.random() * 9); 
             } 
+            this.state_time--;
+            if(this.state_time==0){
+                this.target_x=-1;
+                this.target_y=-1;
+                this.path=[];
+                this.index=0;
+                this.changed=false;
+                this.change_state();
+            }
         }
-        if(this.state == State_id.FIND_WATER||this.state == State_id.FIND_FOOD||this.state == State_id.FIND_SAME_ANIMAL){
+        else if(this.state == State_id.FIND_WATER||this.state == State_id.FIND_FOOD||this.state == State_id.FIND_SAME_ANIMAL){
             if(!this.changed){
                 this.search_target(map,animal_map,obj_map);
                 this.index=0;
@@ -189,21 +200,42 @@ export class Animal extends Object {
                         this.change_state();
                     }
             }
-            return this.move();
         }
+        else if(this.state == State_id.STOP){
+            this.movement=4;
+            this.state_time--;
+            if(this.state_time==0){
+                this.target_x=-1;
+                this.target_y=-1;
+                this.path=[];
+                this.index=0;
+                this.changed=false;
+                this.change_state();
+            }
+        }
+        return this.move();
     }
     change_move(){
             this.movement= Math.floor(Math.random() * 9); 
-            this.changing_move=true;
+            this.changing_movement=true;
 
     }
     change_state(){
-        //this.state= Math.floor(Math.random() * 6); 
-        if(this.state==State_id.FIND_WATER||this.state == State_id.FIND_FOOD)
-            this.state= State_id.STOP; 
-        else if(this.state==State_id.FIND_SAME_ANIMAL){
-            this.state= State_id.FIND_SAME_ANIMAL; 
+        // while(this.state==3||this.state==4)
+        //     this.state= Math.floor(Math.random() * 6)+1;
+        if(this.state == State_id.FIND_WATER||this.state == State_id.FIND_FOOD){
+            this.state = State_id.STOP;
         }
+        else if(this.state == State_id.FIND_SAME_ANIMAL){
+            this.state = Math.random()>0.8?State_id.RANDOM_MOVE:State_id.FIND_SAME_ANIMAL;
+        }
+        else if(this.state == State_id.STOP||this.state ==State_id.RANDOM_MOVE){
+            this.state = Math.floor(Math.random() * 3)+1;
+        }
+        if(this.state == State_id.STOP||this.state == State_id.RANDOM_MOVE){
+            this.state_time=50;
+        }
+
     }
     move() {
         let moveX=0, moveY=0;

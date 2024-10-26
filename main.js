@@ -442,7 +442,7 @@ function updateHPBar(hpBar, currentHP, maxHP) {
                 newX += speed;
                 targetRotation = keys[keyS] ? 3 * Math.PI / 4 : keys[keyW] ? Math.PI / 4 : Math.PI / 2;
             }if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 2) {
-                play_obj.hp-=20;
+                play_obj.hp--;
                 updateHPBar(player_hpBar, play_obj.hp, play_obj.full_hp);
                 if(play_obj.hp==0){
                     app.ticker.stop();

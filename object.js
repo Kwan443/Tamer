@@ -47,7 +47,7 @@ export class Material extends Object {
     constructor(number = 0, x, y, texture,size,x_adding,y_adding,getting_item_id= [],getting_item_number,full_hp=100) {
         super(number, x, y, texture,size,x_adding,y_adding,full_hp);
         this.getting_item_id=getting_item_id;
-        this.getting_item_number=getting_item_number
+        this.getting_item_number=getting_item_number;
     }
 }
 

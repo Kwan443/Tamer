@@ -35,7 +35,6 @@ export class ItemBox {
             return index;
         } else if(this.items[index].number == item.number){
             this.items_amount[index]++;
-            console.log(index);
             return -1;
         }
         else{

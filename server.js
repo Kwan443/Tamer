@@ -133,18 +133,18 @@ for (let i = 0; i < 800; i++) {
                 newY += Math.sin((time_count+i*5+j*3) * 0.1); 
             }
             
-        if(willCollideWithTree(animal_sprite[i][j].x, animal_sprite[i][j].y, objectMap)){
-            if(newY>400){
-                while(willCollideWithTree(newX, newY, objectMap)){
-                    newY-=20;
+            if(willCollideWithTree(animal_sprite[i][j].x, animal_sprite[i][j].y, objectMap)){
+                if(newY>400){
+                    while(willCollideWithTree(newX, newY, objectMap)){
+                        newY-=20;
+                    }
+                }else{
+                    while(willCollideWithTree(newX, newY, objectMap)){
+                        newY+=20;
+                    }
                 }
-            }else{
-                while(willCollideWithTree(newX, newY, objectMap)){
-                    newY+=20;
-                }
-            }
 
-        }
+            }
             if (
                 newX >= 0 && newX < 800 * 20 && 
                 newY >= 0 && newY < 800 * 20
@@ -180,6 +180,9 @@ for (let i = 0; i < 800; i++) {
                 new_position[i][j]=new Point(newX,newY,animal_sprite[i][j].ID);
             }
         }
+        else if(animal_sprite[i][j]&&animalMap.map[i][j]&&animalMap.map[i][j].number==OBJ.Object_name.PLAYER){
+            new_position[i][j]=new Point(animal_sprite[i][j].x,animal_sprite[i][j].y,animal_sprite[i][j].ID);
+        }
     }
 }
 return new_position;
@@ -189,8 +192,15 @@ app.get('/', (req, res) => {
 });
 io.on('connection', (socket) => {
     console.log('A user connected');
+    socket.emit('mapData', map.mapData);
+    socket.emit('animalMapData', animalMap.mapdata);
+    socket.emit('animalIDMapData', animal_sprite);
+
+    socket.emit('objectMapData', objectMap.mapdata);
     socket.on('addPlayer', (data) => {
         socket.emit("set_ID",number_of_animal+ ++number_of_player);
+        
+        let updated_animal;
         while(animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]!=null){
             updated_animal = updateAnimalMovement();
             app.get('/updated_animal', (req, res) => {
@@ -198,26 +208,40 @@ io.on('connection', (socket) => {
             });
         }
         animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]=new Point(data.x,data.y,number_of_animal+number_of_player);
-        
+        animalMap.addObject(new OBJ.Player(Math.floor(data.x / 20),Math.floor(data.y / 20)));
         console.log("new player have join",animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]);
         io.emit("addPlayer", animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]);
     });
     socket.on('playerMove', (data) => {
         outerLoop: for(let i=0;i<800;i++){
             for(let j=0;j<800;j++){
-                if(animal_sprite[i][j]&&animal_sprite[i][j]==data.ID){
+                if(animal_sprite[i][j]&&animal_sprite[i][j].ID==data.ID){
+                    let newX=data.x;
+                    let newY=data.y;
                     if(animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]==null){
-                        io.emit("playerMove",animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]);
-                    }
+                            animalMap.moveObject(j,i, Math.floor(newX / 20), Math.floor(newY / 20));
+                            animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)]=animal_sprite[i][j];
+                            animal_sprite[i][j]=null;
+                            animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)].x = newX;
+                            animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)].y = newY;
+                        }
+                        else if(animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)].ID==data.ID){
+                            if (animal_sprite[i] && animal_sprite[i][j]) {
+                            animal_sprite[i][j].x = newX;
+                            animal_sprite[i][j].y = newY;
+                            } else {
+                                console.error(`Error: animal_sprite[${i}][${j}] is undefined.`);
+                            }
+                        }
+                        console.log("player is:",animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]);
+                    io.emit("playerMove",animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]);
+
                     break outerLoop;
                 }
             }
         }
         
     });
-        socket.emit('mapData', map.mapData);
-        socket.emit('animalMapData', animalMap.mapdata);
-        socket.emit('objectMapData', objectMap.mapdata);
         
         socket.on('disconnect', () => {
             console.log('User disconnected');

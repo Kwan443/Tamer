@@ -44,30 +44,52 @@ class PerlinNoise {
 class Map {
     constructor(app) {
         this.app = app;
-        this.mapContainer = new PIXI.Container();
-        this.app.stage.addChild(this.mapContainer);
-
         this.perlin = new PerlinNoise();
-
+        this.perlinTemperature = new PerlinNoise();
+        this.perlinHumidity = new PerlinNoise();
         // Generate the map
         this.mapData = []
-        this.mapData = this.generateMapData(800, 800);
-        this.createMap(this.mapData);
     }
 
     generateMapData(width, height) {
         const mapData = [];
         const noiseScale = 0.1;
+        const noisemapScale = 0.003;
 
         for (let y = 0; y < height; y++) {
             mapData[y] = [];
             for (let x = 0; x < width; x++) {
                 const noiseValue = this.perlin.noise(x * noiseScale, y * noiseScale);
+                const noiseValueTemperature = this.perlinTemperature.noise(x * noisemapScale, y * noisemapScale);
+                const noiseValueHumidity = this.perlinHumidity.noise(x * noisemapScale, y * noisemapScale);
+                
                 let tileType;
 
                 if (noiseValue < 0.3) {
-                    tileType = 0; 
-                } else {
+                    if(noiseValueHumidity<0.01){
+                        if(noiseValueTemperature<0.01){
+                            tileType = 6;
+                        }
+                        else{
+                            tileType = 5;
+                        }
+                    }
+                    else{
+                        
+                        tileType = 0;
+                    }
+                    
+                }
+                else if(noiseValueHumidity<0.01) {
+                    if(noiseValueTemperature<0.01){
+                        tileType = 1;
+                    }
+                    else{
+                        tileType = 2;
+                    }
+                }
+                else{
+                    
                     let water_neighbor = false;
                     let lava_neighbor = false;
                     for (let yOffset = -2; yOffset <= 2; yOffset++) {
@@ -118,7 +140,7 @@ class Map {
     getMapData(){
         return this.mapData;
     }
-    createMap(mapData,tileSize=20) {
+    createMap(mapData,mapContainer,tileSize=20) {
         let tile= new Array(800).fill(null).map(() => new Array(800).fill(null));
         for (let y = 0; y < mapData.length; y++) {
             for (let x = 0; x < mapData[y].length; x++) {
@@ -141,6 +163,12 @@ class Map {
                     case 4:
                         color =0x300542; //obsidian
                         break;
+                    case 5:
+                        color =0xffed91; //desert
+                        break;
+                    case 6:
+                        color =0xe6f5f2; //snow
+                        break;
                     default:
                         color = 0xffffff; // Default color
                         break;
@@ -150,7 +178,7 @@ class Map {
                 tile[y][x].beginFill(color);
                 tile[y][x].drawRect(x * tileSize, y * tileSize, tileSize, tileSize);
                 tile[y][x].endFill();
-                this.mapContainer.addChild(tile[y][x]);
+                mapContainer.addChild(tile[y][x]);
             }
         }
         return tile;

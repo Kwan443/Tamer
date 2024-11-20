@@ -6,7 +6,8 @@ export const Item_name = {
     COCONUT:4,
     CARROT:5,
     POTATO:6,
-    WHEAT:7
+    WHEAT:7,
+    FRUIT:8
 };
 export class Item {
     constructor(number = 0,texture,size,x_adding,y_adding) {
@@ -43,5 +44,9 @@ export class Item {
 }export class Wheat extends Item {
     constructor() {
         super(Item_name.WHEAT,'images/wheat.png',30,0,0);
+    }
+}export class Fruit extends Item {
+    constructor() {
+        super(Item_name.WHEAT,'images/fruit.png',60,0,0);
     }
 }

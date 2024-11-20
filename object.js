@@ -13,13 +13,15 @@ export const Object_name = {
     TREE2: 2,
     GRASS: 3,
     BERRYBUSH: 4,
-    DOG: 5,
-    COW: 6,
-    PIG: 7,
-    RABBIT: 8,
-    SHEEP: 9,
-    SOUL_FOX: 10,
-    PLAYER: 11
+    CACTUS:5,
+    ICE_CRYSTAL:6,
+    DOG: 7,
+    COW: 8,
+    PIG: 9,
+    RABBIT: 10,
+    SHEEP: 11,
+    SOUL_FOX: 12,
+    PLAYER: 13
 };
 export const FoodID = {
     BONES: 1,
@@ -74,6 +76,16 @@ export class BerryBush extends Material {
         super(Object_name.BERRYBUSH, x, y,'images/burrybush.png',60,15,0,[Item_name.BERRY],1);
     }
 }
+export class Cactus extends Material {
+    constructor(x, y) {
+        super(Object_name.CACTUS, x, y,'images/cactus.png',60,15,0,[Item_name.FRUIT],1);
+    }
+}
+export class Ice_crystal extends Material {
+    constructor(x, y) {
+        super(Object_name.ICE_CRYSTAL, x, y,'images/ice_crystal.png',60,15,0,[],0);
+    }
+}
 export class Animal extends Object {
     constructor(number = 0, x, y, texture,size,x_adding,y_adding, foodID = [],speed,full_hp=100) {
         super(number, x, y, texture,size,x_adding,y_adding,full_hp);
@@ -82,12 +94,12 @@ export class Animal extends Object {
         this.speed = speed;
         this.target_x=-1;
         this.target_y=-1;
-        this.state = State_id.FIND_FOOD;
+        this.state = State_id.RANDOM_MOVE;
         this.path=[];
         this.index=0;
         this.changed=false;
         this.changing_movement=false;
-        this.state_time=50;
+        this.state_time=1000000000000000;
         this.random_time=100;
     }
     search_target(map, animal_map, obj_map) {
@@ -317,7 +329,7 @@ export class SoulFox extends Animal {
 }
 export class Player extends Animal{
     constructor(x, y,playerId) {
-        super(Object_name.PLAYER, x, y,'images/player.png',100,0,0, [],3);
+        super(Object_name.PLAYER, x, y,'images/player.png',60,0,0, [],3);
         this.playerId=playerId;
     }
 }

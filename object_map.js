@@ -86,6 +86,7 @@ export class ObjectMap {
 					this.addObject(new OBJ.SoulFox(x, y));
 				}else if (this.mapdata[y][x]==OBJ.Object_name.PLAYER) {
 					this.addObject(new OBJ.Player(x, y));
+					console.log("make player")
 				}
 			}
 		}
@@ -111,7 +112,6 @@ export class ObjectMap {
 					const tileType = mapData[y][x];
 					if (this.map[y][x] === null&&tileType!=2) {
 						this.addObject(new animalClass(x, y));
-						this.mapdata[y][x] = this.map[y][x].number
 						break;
 					}
 				}
@@ -121,6 +121,10 @@ export class ObjectMap {
 
 	addObject(gameObject) {
 		this.map[gameObject.y][gameObject.x] = gameObject;
+		this.mapdata[gameObject.y][gameObject.x] = gameObject.number
+		if (this.mapdata[gameObject.y][gameObject.x]==OBJ.Object_name.PLAYER) {
+			console.log("make player")
+		}
 	}
 
 	removeObject(x, y) {
@@ -133,7 +137,9 @@ export class ObjectMap {
 		const gameObject = this.map[y][x];
 		if (gameObject) {
 			this.map[newY][newX] = this.map[y][x];
+			this.mapdata[newY][newX] = this.mapdata[y][x];
 			this.map[y][x] = null;
+			this.mapdata[y][x]=null;
 			this.map[newY][newX].x=newX;
 			this.map[newY][newX].y=newY;
 		}

@@ -31,7 +31,7 @@ async function drawobj(x, y, textureSrc, scale,app) {
     obj_sprite.scale.set(scale / obj_sprite.width);
     obj_sprite.anchor.set(0.5);
     obj_sprite.x = x;
-    obj_sprite.y = y - obj_sprite.height / 2 + 20;;
+    obj_sprite.y = y - obj_sprite.height / 2 + 20;
     obj_sprite.interactive = true;
     app.stage.addChild(obj_sprite);
     return obj_sprite;
@@ -193,21 +193,24 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         finish0=true;
     })
     socket.on('animalMapData',async(obj)=>{
+        
+    socket.on('animalIDMapData', async(data)=>{
         console.log("animal");
         animalMap.mapdata = obj;
         animalMap.generateAnimal_by_mapData();
+        
         // Process animalMap data
         for (let y = 0; y < 800; y++) {
             for (let x = 0; x < 800; x++) {
                 if(animalMap.map[y][x]){
                     animal_sprite[y][x] = await drawobj(x*20+animalMap.map[y][x].x_adding, y*20+animalMap.map[y][x].y_adding, animalMap.map[y][x].texture, animalMap.map[y][x].size, app);
-                    number_of_animal=number_of_animal+1;
-                    animal_spriteID[y][x]=number_of_animal;
+                    animal_spriteID[y][x]=data[y][x].ID;
                 }   
         }}
+    });
         
         finish1=true;
-})
+});
 let itemBar;
 let item_bag;
 let item_box;
@@ -226,13 +229,11 @@ let other_player_obj=[];
     
     socket.on("addPlayer",async(obj)=>{
         console.log("new player have join",obj);
-        let ID=obj.ID;
-        if (ID!=playerID){
+        if (obj.ID!=playerID){
             if(animal_sprite[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)]==null){
-                animal_sprite[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)] = await drawobj(x*20+animalMap.map[y][x].x_adding, y*20+animalMap.map[y][x].y_adding, animalMap.map[y][x].texture, animalMap.map[y][x].size, app);
+                animalMap.addObject(new OBJ.Player(Math.floor(obj.x / 20), Math.floor(obj.y / 20)));
+                animal_sprite[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)] = await drawobj(obj.x, obj.y, animalMap.map[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)].texture, animalMap.map[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)].size, app);
                 animal_spriteID[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)]=obj.ID;
-                other_player_obj.push(new OBJ.Player(Math.floor(obj.x / 20), Math.floor(obj.y / 20)));
-                animalMap.addObject(play_obj);
             }
         }
     })
@@ -561,8 +562,37 @@ if(player_hitting==false)
             
             player.x = newX;
             player.y = newY;
-            socket.emit('playerMove',new Point(player.x,player.y,playerID));
-        
+            socket.on('playerMove',async(obj)=>{
+                if (obj.ID!=playerID){
+                    outerLoop: for(let i=0;i<800;i++){
+                        for(let j=0;j<800;j++){
+                            if(animal_sprite[i][j]&&animal_spriteID[i][j]==obj.ID){
+                                console.log(animalMap.map[i][j].texture);
+                                let newX=obj.x;
+                                let newY=obj.y;
+                                if(animal_sprite[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)]==null){
+                                        animalMap.moveObject(j,i, Math.floor(newX / 20), Math.floor(newY / 20));
+                                        animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)]=animal_sprite[i][j];
+                                        animal_sprite[i][j]=null;
+                                        animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)].x = newX;
+                                        animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)].y = newY;
+                                        animal_spriteID[Math.floor(newY / 20)][Math.floor(newX / 20)]=animal_spriteID[i][j];
+                                        animal_spriteID[i][j]=0;
+                                    }
+                                    else if(animal_spriteID[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)]==obj.ID){
+                                        if (animal_sprite[i] && animal_sprite[i][j]) {
+                                        animal_sprite[i][j].x = newX;
+                                        animal_sprite[i][j].y = newY;
+                                        } else {
+                                            console.error(`Error: animal_sprite[${i}][${j}] is undefined.`);
+                                        }
+                                    }
+                                break outerLoop;
+                            }
+                        }
+                    }
+                }
+            });
         }
             let delta = targetRotation - player.rotation;
             if (delta > Math.PI) {
@@ -573,7 +603,41 @@ if(player_hitting==false)
             const rotationSpeed = 0.05; 
             player.rotation += delta * rotationSpeed;
     }
-    fetch('http://localhost:3000/updated_animal')
+    
+    if(time_count%100==0){
+        socket.emit('playerMove',new Point(player.x,player.y,playerID));
+        socket.on('playerMove',async(obj)=>{
+            if (obj.ID!=playerID){
+                outerLoop: for(let i=0;i<800;i++){
+                    for(let j=0;j<800;j++){
+                        if(animal_sprite[i][j]&&animal_spriteID[i][j]==obj.ID){
+                            console.log(animalMap.map[i][j].texture);
+                            let newX=obj.x;
+                            let newY=obj.y;
+                            if(animal_sprite[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)]==null){
+                                    animalMap.moveObject(j,i, Math.floor(newX / 20), Math.floor(newY / 20));
+                                    animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)]=animal_sprite[i][j];
+                                    animal_sprite[i][j]=null;
+                                    animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)].x = newX;
+                                    animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)].y = newY;
+                                    animal_spriteID[Math.floor(newY / 20)][Math.floor(newX / 20)]=animal_spriteID[i][j];
+                                    animal_spriteID[i][j]=0;
+                                }
+                                else if(animal_spriteID[Math.floor(obj.y / 20)][Math.floor(obj.x / 20)]==obj.ID){
+                                    if (animal_sprite[i] && animal_sprite[i][j]) {
+                                    animal_sprite[i][j].x = newX;
+                                    animal_sprite[i][j].y = newY;
+                                    } else {
+                                        console.error(`Error: animal_sprite[${i}][${j}] is undefined.`);
+                                    }
+                                }
+                            break outerLoop;
+                        }
+                    }
+                }
+            }
+        });
+        fetch('http://localhost:3000/updated_animal')
     .then(async (response) => {
             const data = await response.json();
             
@@ -607,8 +671,6 @@ if(player_hitting==false)
                             continue;
                         }
                         if (animalMap.map[Math.floor(newY / 20)]&&(Math.floor(newY / 20)!=i||Math.floor(newX / 20)!=j)&&animalMap.map[Math.floor(newY / 20)][Math.floor(newX / 20)]==null) {
-                                
-                            
                             animalMap.moveObject(j,i, Math.floor(newX / 20), Math.floor(newY / 20));
                             animal_sprite[Math.floor(newY / 20)][Math.floor(newX / 20)]=animal_sprite[i][j];
                             animal_sprite[i][j]=null;
@@ -633,6 +695,8 @@ if(player_hitting==false)
     .catch(error => {
         console.error('Error fetching animal map data:', error);
     });
+    }
+    
         //let the screen follow the player
         app.renderer.resize(window.innerWidth, window.innerHeight);
         app.stage.pivot.x = player.x;

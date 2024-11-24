@@ -47,6 +47,6 @@ export class Item {
     }
 }export class Fruit extends Item {
     constructor() {
-        super(Item_name.WHEAT,'images/fruit.png',60,0,0);
+        super(Item_name.FRUIT,'images/fruit.png',60,0,0);
     }
 }

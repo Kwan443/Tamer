@@ -36,8 +36,8 @@ async function drawobj(x, y, textureSrc, scale,app) {
     app.stage.addChild(obj_sprite);
     return obj_sprite;
 }
-async function deleteobj(obj,sprite,app){
-    obj=null;
+async function deleteobj(y,x,objmap,sprite,app){
+    objmap.removeObject(x,y);
     app.stage.removeChild(sprite);
     sprite = null;
 }
@@ -71,22 +71,26 @@ export function willCollide(x, y,objectMap,num,collisionAreawidth,collisionAreah
             const currentX = x_new + i;
             const currentY = y_new + j;
             if (objectMap.map[currentY] && objectMap.map[currentY][currentX] && objectMap.map[currentY][currentX].number === num) {
-                return true;
+                return objectMap.map[currentY][currentX];
             }
         }
     }
 
-    return false; 
+    return null; 
 }
 export function willCollideWithTree(x, y,objectMap){
     return willCollide(x, y ,objectMap,OBJ.Object_name.TREE1,1)||willCollide(x, y ,objectMap,OBJ.Object_name.TREE2,1)||willCollide(x, y ,objectMap,OBJ.Object_name.ICE_CRYSTAL,1);
 }
 export function willCollideWithAnimal(x, y,objectMap){
+    
+    const x_new = Math.floor(x / 20);
+    const y_new = Math.floor(y / 20);
+
     for(let i=OBJ.Object_name.DOG;i<=OBJ.Object_name.PLAYER; i++){
-        if(willCollide(x, y ,objectMap,i,0))
-            return true;
+        if(willCollide(x, y ,objectMap,i,1))
+            return willCollide(x, y ,objectMap,i,1);
     }
-    return false;
+    return null;
 }
 export function willCollideWithObject(x, y, objectMap) {
 
@@ -99,7 +103,7 @@ export function willCollideWithObject(x, y, objectMap) {
     }
     return null;
 }
-async function get_item(mouseX, mouseY, objectMap, item_box, item_sprite, window, all_items,app,open_bag) {
+async function get_item(mouseX, mouseY, objectMap, item_box, item_sprite, all_items,app,open_bag) {
     let item_id=willCollideWithObject(mouseX, mouseY, objectMap);
     if (item_id) {
         const test = item_box.setValue(all_items[item_id]);
@@ -114,8 +118,81 @@ async function get_item(mouseX, mouseY, objectMap, item_box, item_sprite, window
         return true;
     }
     return false;
-
 }
+function hit_animal_func(mouseX, mouseY, animalMap,animal_spriteID,animal_sprite,app,socket,kill_amount){
+    console.log("hit");
+    let hit_animal=willCollideWithAnimal(mouseX, mouseY, animalMap);
+    console.log(hit_animal);
+    if (hit_animal) {
+        hit_animal.hp-=10;
+        hit_animal.favorability-=10;
+        console.log("hp= ",hit_animal.hp);
+        socket.emit('hit_animal',{ID:animal_spriteID[hit_animal.y][hit_animal.x],hp:hit_animal.hp});
+        console.log("hitting_animal");
+        if(hit_animal.hp<=0){
+            console.log("animal_dead");
+            kill_amount++;
+            deleteobj(hit_animal.y,hit_animal.x,animalMap,animal_sprite[hit_animal.y][hit_animal.x],app);
+        }
+    }
+}
+async function tame_animal_func(mouseX, mouseY, animalMap,kill_amount){
+    let hit_animal=willCollideWithAnimal(mouseX, mouseY, animalMap);
+    if (hit_animal) {
+        let favorability=(hit_animal.favorability/100);
+        if(favorability>=1){
+            favorability=1;
+        }
+        let success_probability=favorability*0.8+0.05;
+        if(hit_animal.number==OBJ.Object_name.SOUL_FOX){
+            success_probability+=kill_amount/500*0.8;
+        }
+        if (Math.random() < success_probability) {
+            console.log("tame success")
+            return 1;
+            
+        } else {
+            console.log("tame fail")
+            return 2;
+        }
+    }
+    return 0;
+}async function feed_animal_func(mouseX, mouseY, animalMap,item_choose,item_box,item_sprite,item_text_sprite,app){
+    let hit_animal=willCollideWithAnimal(mouseX, mouseY, animalMap);
+    if (hit_animal) {
+        console.log("feeding food");
+        let have_food=false;
+        for(let i=0;i<hit_animal.food_num;i++){
+            if(item_box.items[item_choose-1]&&hit_animal.foodID[i]){
+                if(hit_animal.foodID[i]==item_box.items[item_choose-1].number){
+                    have_food=true;
+                    item_box.items_amount[item_choose-1]--;
+                    if(item_box.items_amount[item_choose-1]==0){
+                        item_box.items[item_choose-1]=null;
+                        app.stage.removeChild(item_sprite[item_choose-1]);
+                        item_sprite[item_choose-1] = null;
+                        item_text_sprite[item_choose-1].x=800*25;
+                    }
+                }   
+            }
+        }
+        if(have_food){
+            if(hit_animal.favorability<=100){
+                hit_animal.favorability+=5;
+            }
+            else{
+                hit_animal.hp+=10;
+            }
+            
+            console.log(hit_animal.favorability);
+            return 1;
+        }else{
+            return 2;
+        }
+    }
+    return false;
+}
+
 function createHPBar(currentHP, maxHP) {
     const barWidth = 200;
     const barHeight = 30;
@@ -212,6 +289,7 @@ function updateHPBar(hpBar, currentHP, maxHP) {
         finish1=true;
 });
 let itemBar;
+let item_choose_box;
 let item_bag;
 let item_box;
 let item_sprite;
@@ -257,6 +335,12 @@ let other_player_obj=[];
      item_bag = new Array(3).fill(null);
      item_box= new ItemBox;
      item_sprite = new Array(36).fill(null);
+     item_choose_box = new PIXI.Graphics();
+     item_choose_box.beginFill(0x010101);
+     item_choose_box.alpha = 0.5; 
+     item_choose_box.drawRect(-25, -50, 50, 50);
+     item_choose_box.endFill();
+     app.stage.addChild(item_choose_box);
      for(let i = 0; i < 9; i++){
          if (item_box.items[i]){
              item_sprite[i] = await drawobj(window.innerWidth / 4 - 200 + i * 50, window.innerHeight / 2 - 65, item_box.items[i].texture, item_box.items[i].size, app);
@@ -293,89 +377,46 @@ let other_player_obj=[];
     const keyD = 68;
     const keyE = 69;
     const keyM = 77;
+    const keyT = 84;
+    const keyF = 70;
+    const key1 = 49; // Key 1
+    const key2 = 50; // Key 2
+    const key3 = 51; // Key 3
+    const key4 = 52; // Key 4
+    const key5 = 53; // Key 5
+    const key6 = 54; // Key 6
+    const key7 = 55; // Key 7
+    const key8 = 56; // Key 8
+
+    const key9 = 57; // Key 9
     let mouseX = 0;
     let mouseY = 0;
-    let started = 0;
+    let started = 0;   
+    let item_choose=1;
+    let Tclick=false;
+    let Fclick=false;
     
     let click=true;
     let open_bag=false;
     let open_map=false;
     let tile = new PIXI.Graphics();
     let player_point = new PIXI.Graphics();
-    
+    let draw_heart=false;
+    let draw_heart_heart=false;
+    let draw_question_mark=false;
     let speed = 10;
     player.rotation=0;
     let time_count=0;
     let move_item = new Array(800).fill(false).map(() => new Array(800).fill(false));
     let start_time = new Array(800).fill(-1).map(() => new Array(800).fill(-1));
     let player_hitting=false;
-    app.ticker.add(async () => {
-        
-        if(finish0&&finish1&&finish2){
-        //slow down speed when go to some area
-        let targetRotation = player.rotation;
-        if (willCollide(player.x, player.y, objectMap, 4, 1)) {
-            speed = 1; 
-        }
-        if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)]==1){
-            speed /= 2; 
-        }
-        //get item
-        if (started == 1 && player_hitting == false&&
-            Math.floor(mouseX / 20) >= Math.floor(player.x / 20) - 6 &&
-            Math.floor(mouseX / 20) <= Math.floor(player.x / 20) + 6 &&
-            Math.floor(mouseY / 20) >= Math.floor(player.y / 20) - 6 &&
-            Math.floor(mouseY / 20) <= Math.floor(player.y / 20) + 6) {
-            get_item(mouseX, mouseY, objectMap, item_box, item_sprite, window, all_item, app,open_bag)
-                .then((getted) => {
-                    if (getted) {
-                        move_item[Math.floor(mouseY / 20)][Math.floor(mouseX / 20)] = true;
-                        player_hitting = true;
-                        const angle = Math.atan2(Math.floor(mouseY/20) - Math.floor(player.y/20), Math.floor(mouseX/20) - Math.floor(player.x/20));
-                        player.rotation = angle + Math.PI/2;
-                        while(player.rotation<0||player.rotation>2*Math.PI){
-                            if(player.rotation<0){
-                                player.rotation+=2*Math.PI;
-                            }
-                            else{
-                                
-                                player.rotation-=2*Math.PI;
-                            }
-                        }
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error occurred while getting item:", error);
-                });
-
-            
-        }
-        started = 0;
-        for (let y = 0; y < move_item.length; y++) {
-            for (let x = 0; x < move_item[y].length; x++) {
-                if(obj_sprite[y]&&obj_sprite[y][x]){
-                    if (move_item[y][x] == true) {
-                        if (start_time[y][x] == -1) {
-                            start_time[y][x] = time_count;
-                        }
-                        const time_used = time_count - start_time[y][x];
-                        const duration = 50; 
-            
-                        if (time_used <= duration) {
-                            const newX = obj_sprite[y][x].x + Math.sin(time_used); 
-                            obj_sprite[y][x].x = newX;
-                        } else {
-                            move_item[y][x] = false;
-                            start_time[y][x] = -1;
-                            player_hitting=false;
-                        }
-                    }
-                }
-                    
-            }
-        }
-
-        
+    let taming=false;
+    let taming_time = -1;
+    let taming_choice=0;
+    let feeding=0;
+    let feeding_choice=0;
+    let feeding_time = -1;
+    let kill_amount=0;
     window.addEventListener('mousemove', (event) => {
         mouseX = Math.floor(((event.clientX - window.innerWidth / 2)/2 + player.x)/ 20)*20; 
         mouseY = Math.floor(((event.clientY - window.innerHeight / 2)/2 + player.y)/ 20)*20; 
@@ -388,8 +429,11 @@ let other_player_obj=[];
     let first_time_gen_map=true;
     window.addEventListener('keydown', async (event) => {
         const keyCode = event.keyCode;
-        if ([keyW, keyA, keyS, keyD].includes(keyCode)) {
+        if ([keyW, keyA, keyS, keyD,keyT,keyF].includes(keyCode)) {
             keys[keyCode] = true;
+        }
+        if ([key1, key2, key3, key4, key5, key6, key7, key8, key9].includes(keyCode)) {
+            item_choose = keyCode - 48; 
         }if (keyCode == keyE&&click==true&&open_bag==false) {
             for(let i=-1;i<=1;i++){
                 item_bag[i+1] = await drawobj(window.innerWidth / 4, window.innerHeight/4 + i * 50, 'images/item_bar.png', 1, app);
@@ -497,11 +541,203 @@ let other_player_obj=[];
         const keyCode = event.keyCode;
         if ([keyW, keyA, keyS, keyD].includes(keyCode)) {
             keys[keyCode] = false;
-        }if (keyCode == keyE||keyCode == keyM) {
+        }
+        if([keyT].includes(keyCode)){
+            keys[keyCode] = false;
+            Tclick=false;
+        }
+        if([keyF].includes(keyCode)){
+            keys[keyCode] = false;
+            Fclick=false;
+        }
+        if (keyCode == keyE||keyCode == keyM) {
             click=true;
         }
         
     });
+let heart;
+let heart_heart;
+let question_mark;
+    app.ticker.add(async () => {
+        
+        if(finish0&&finish1&&finish2){
+        //slow down speed when go to some area
+        let targetRotation = player.rotation;
+        if (willCollide(player.x, player.y, objectMap, 4, 1)) {
+            speed = 1; 
+        }
+        if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)]==1){
+            speed /= 2; 
+        }
+        //get item
+        if (started == 1 && player_hitting == false&&
+            Math.floor(mouseX / 20) >= Math.floor(player.x / 20) - 6 &&
+            Math.floor(mouseX / 20) <= Math.floor(player.x / 20) + 6 &&
+            Math.floor(mouseY / 20) >= Math.floor(player.y / 20) - 6 &&
+            Math.floor(mouseY / 20) <= Math.floor(player.y / 20) + 6) {
+                let getted=get_item(mouseX, mouseY, objectMap, item_box, item_sprite, all_item, app,open_bag)
+                .then((getted) => {
+                    if (getted) {
+                        move_item[Math.floor(mouseY / 20)][Math.floor(mouseX / 20)] = true;
+                        player_hitting = true;
+                        const angle = Math.atan2(Math.floor(mouseY/20) - Math.floor(player.y/20), Math.floor(mouseX/20) - Math.floor(player.x/20));
+                        player.rotation = angle + Math.PI/2;
+                        while(player.rotation<0||player.rotation>2*Math.PI){
+                            if(player.rotation<0){
+                                player.rotation+=2*Math.PI;
+                            }
+                            else{
+                                
+                                player.rotation-=2*Math.PI;
+                            }
+                        }
+                    }
+                    else{
+                        hit_animal_func(mouseX, mouseY, animalMap,animal_spriteID,animal_sprite,app,socket,kill_amount);
+                    }
+                })
+                .catch((error) => {
+                    console.log("Error occurred while getting item:", error);
+                });
+        }
+        if(player_hitting == false&&keys[keyT]&&Tclick==false){
+            let x=mouseX;
+            let y=mouseY;
+            taming=tame_animal_func(mouseX, mouseY, animalMap,kill_amount)
+            .then(async (taming) => {
+                taming_choice=false;
+                if (taming) {
+                    player_hitting = true;
+                    if(draw_heart==false){
+                        heart=await drawobj(0,0, "images/taming_heart.png", 100, app);
+                        draw_heart=true;
+                    }
+                    heart.alpha = 0.2;
+                    heart.x=x;
+                    heart.y=y-50;
+                    taming_choice=true;
+                    if(taming==1){
+                        let hit_animal=willCollideWithAnimal(x, y, animalMap);
+                        socket.emit('tame_animal',{ID:animal_spriteID[hit_animal.y][hit_animal.x],playerID:playerID});
+                    }
+                }
+            })
+            .catch((error) => {
+                console.log("Error occurred while getting item:", error);
+            });
+            Tclick=true;
+        }if(player_hitting == false&&keys[keyF]&&Fclick==false){
+            feeding=feed_animal_func(mouseX, mouseY, animalMap,item_choose,item_box,item_sprite,item_text_sprite,app)
+            .then(async (feeding) => {
+                feeding_choice=0;
+                if (feeding) {
+                    player_hitting = true;
+                    if(feeding==1){
+                        if(draw_heart_heart==false){
+                            heart_heart=await drawobj(0,0, "images/heart.png", 20, app);
+                            draw_heart_heart=true;
+                        }
+                        heart_heart.x=mouseX;
+                        heart_heart.y=mouseY-25;
+                        feeding_choice=1;
+                    }
+                    else if(feeding==2){
+                        if(draw_question_mark==false){
+                            question_mark=await drawobj(0,0, "images/question_mark.png", 20, app);
+                            draw_question_mark=true;
+                        }
+                        question_mark.x=mouseX;
+                        question_mark.y=mouseY-25;
+                        feeding_choice=2;
+                    }
+                }
+            })
+            .catch((error) => {
+                console.log("Error occurred while getting item:", error);
+            });
+            Fclick=true;
+            
+        }
+        started = 0;
+        for (let y = 0; y < move_item.length; y++) {
+            for (let x = 0; x < move_item[y].length; x++) {
+                if(obj_sprite[y]&&obj_sprite[y][x]){
+                    if (move_item[y][x] == true) {
+                        if (start_time[y][x] == -1) {
+                            start_time[y][x] = time_count;
+                        }
+                        const time_used = time_count - start_time[y][x];
+                        const duration = 50; 
+            
+                        if (time_used <= duration) {
+                            const newX = obj_sprite[y][x].x + Math.sin(time_used); 
+                            obj_sprite[y][x].x = newX;
+                        } else {
+                            move_item[y][x] = false;
+                            start_time[y][x] = -1;
+                            player_hitting=false;
+                        }
+                    }
+                }
+                    
+            }
+        }
+
+        if(taming_choice){
+            if (taming_time == -1) {
+                taming_time = time_count;
+            }
+            const time_used = time_count - taming_time;
+            const duration = 50; 
+
+            if (time_used <= duration) {
+                heart.alpha+=0.8/50;
+            } else {
+                taming_time = -1;
+                player_hitting=false;
+                taming=false;
+                heart.x=800*25;
+                heart.y=800*25;
+            }
+        }
+        if(feeding_choice){
+            if(feeding_choice==1){
+                if (feeding_time == -1) {
+                    feeding_time = time_count;
+                }
+                const time_used = time_count - feeding_time;
+                const duration = 50; 
+    
+                if (time_used <= duration) {
+                    const newX = heart_heart.x + Math.sin(time_used); 
+                    heart_heart.x = newX;
+                } else {
+                    feeding_time = -1;
+                    player_hitting=false;
+                    feeding_choice=0;
+                    heart_heart.x=800*25;
+                    heart_heart.y=800*25;
+                }
+            }else if(feeding_choice==2){
+                console.log("move object");
+                if (feeding_time == -1) {
+                    feeding_time = time_count;
+                }
+                const time_used = time_count - feeding_time;
+                const duration = 50; 
+    
+                if (time_used <= duration) {
+                    const newX = question_mark.x + Math.sin(time_used); 
+                    question_mark.x = newX;
+                } else {
+                    feeding_time = -1;
+                    player_hitting=false;
+                    feeding_choice=0;
+                    question_mark.x=800*25;
+                    question_mark.y=800*25;
+                }
+            }
+        }
 
 
 //player movement
@@ -604,7 +840,7 @@ if(player_hitting==false)
             player.rotation += delta * rotationSpeed;
     }
     
-    if(time_count%100==0){
+    if(time_count%10==0){
         socket.emit('playerMove',new Point(player.x,player.y,playerID));
         socket.on('playerMove',async(obj)=>{
             if (obj.ID!=playerID){
@@ -707,6 +943,17 @@ if(player_hitting==false)
         player_hpBar.y=player.y+ window.innerHeight/4-120;
         itemBar.x = player.x ;
         itemBar.y = player.y + window.innerHeight/4-40; 
+        if(!open_map&&app.stage.getChildIndex(item_choose_box)!=app.stage.children.length - 1){
+            app.stage.setChildIndex(item_choose_box, app.stage.children.length - 1);
+            
+        }else if(open_map&&app.stage.getChildIndex(item_choose_box)!=app.stage.children.length - 3){
+            app.stage.setChildIndex(item_choose_box, app.stage.children.length - 1);
+            app.stage.setChildIndex(tile, app.stage.children.length - 1);
+            app.stage.setChildIndex(player_point, app.stage.children.length - 1);
+
+        }
+        item_choose_box.x=itemBar.x-250+item_choose*50;
+        item_choose_box.y=itemBar.y;
         // editing the bar item text
         
         if(player_hitting==false)

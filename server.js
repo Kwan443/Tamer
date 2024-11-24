@@ -25,6 +25,10 @@ export function willCollide(x, y,objectMap,num,collisionAreawidth,collisionAreah
 export function willCollideWithTree(x, y,objectMap){
     return willCollide(x, y ,objectMap,OBJ.Object_name.TREE1,1)||willCollide(x, y ,objectMap,OBJ.Object_name.TREE2,1)||willCollide(x, y ,objectMap,OBJ.Object_name.ICE_CRYSTAL,1);
 }
+function deleteobj(y,x,objmap,sprite,app){
+    objmap.removeObject(x,y);
+    sprite = null;
+}
 class Point {
     constructor(x, y,ID) {
         this.x = x;
@@ -111,10 +115,12 @@ for (let i = 0; i < 800; i++) {
             if (map.mapData[i]&&map.mapData[i][j] == 2) {
                 animalMap.map[i][j].hp--;
             }
-            if(animalMap.map[i]&&animalMap.map[i][j].hp==0){
-                deleteobj(animalMap.map[i][j],animal_sprite[i][j],app);
+            if(animalMap.map[i]&&animalMap.map[i][j].hp<=0){
+                console.log("animal",animal_sprite[i][j].ID,"is dead");
+                deleteobj(i,j,animalMap,animal_sprite[i][j],app);
+                continue;
             }
-            let { moveX, moveY } =  animalMap.map[i][j].normal_movement(map.mapData,animalMap.map,objectMap.map); 
+            let { moveX, moveY } =  animalMap.map[i][j].normal_movement(map.mapData,animalMap.map,objectMap.map,animal_sprite); 
 
 
             if (map.mapData[i][j] == 1) {
@@ -233,7 +239,6 @@ io.on('connection', (socket) => {
                                 console.error(`Error: animal_sprite[${i}][${j}] is undefined.`);
                             }
                         }
-                        console.log("player is:",animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]);
                     io.emit("playerMove",animal_sprite[Math.floor(data.y / 20)][Math.floor(data.x / 20)]);
 
                     break outerLoop;
@@ -242,10 +247,42 @@ io.on('connection', (socket) => {
         }
         
     });
+    socket.on('hit_animal', (data) => {
         
-        socket.on('disconnect', () => {
-            console.log('User disconnected');
+    for (let i = 0; i < 800; i++) {
+    for (let j = 0; j < 800; j++) {
+        if(animal_sprite[i][j]){
+        if(animal_sprite[i][j].ID==data.ID){
+            animalMap.map[i][j].hp=data.hp;
+            console.log("hit_animal");
+            if(data.hp<=0){
+                deleteobj(i,j,animalMap,animal_sprite[i][j],app);
+                console.log("animal",animal_sprite[i][j].ID,"is dead");
+            }
+        }
+    }
+    }};
+    io.emit('hit_animal',{ID:data.ID,hp:data.hp})
+    });
+    socket.on('tame_animal', (data) => {
+        console.log("tamed_animal");
+        
+        for (let i = 0; i < 800; i++) {
+        for (let j = 0; j < 800; j++) {
+            if(animal_sprite[i][j]){
+            if(animal_sprite[i][j].ID==data.ID){
+                animalMap.map[i][j].follow_id=data.playerID;
+                animalMap.map[i][j].state=OBJ.State_id.FOLLOW;
+                console.log(animalMap.map[i][j]);
+                console.log("tamed_animal_for_sure");
+            }
+        }
+        }}
+        io.emit('tame_animal',{ID:data.ID,playerID:data.playerID})
         });
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
 
 });
 

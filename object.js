@@ -23,13 +23,6 @@ export const Object_name = {
     SOUL_FOX: 12,
     PLAYER: 13
 };
-export const FoodID = {
-    BONES: 1,
-    GRASS: 2,
-    MUSHROOM: 3,
-    CARROTS: 4,
-    SOULS: 5
-};
 
 export class Object {
     constructor(number = 0, x, y,texture,size,x_adding,y_adding,full_hp=100,hp=full_hp) {
@@ -87,22 +80,32 @@ export class Ice_crystal extends Material {
     }
 }
 export class Animal extends Object {
-    constructor(number = 0, x, y, texture,size,x_adding,y_adding, foodID = [],speed,full_hp=100) {
+    constructor(number = 0, x, y, texture,size,x_adding,y_adding, foodID = [],food_num,speed,full_hp=100) {
         super(number, x, y, texture,size,x_adding,y_adding,full_hp);
         this.foodID = foodID;
         this.movement=4;
         this.speed = speed;
         this.target_x=-1;
         this.target_y=-1;
-        this.state = State_id.RANDOM_MOVE;
+        if(number==Object_name.PLAYER){
+            this.state = State_id.STOP;
+
+        }else{
+            this.state = State_id.RANDOM_MOVE;
+        }
         this.path=[];
         this.index=0;
         this.changed=false;
         this.changing_movement=false;
         this.state_time=1000000000000000;
         this.random_time=100;
+        this.food_num=food_num;
+        this.follow_id=0;
+        this.hit_id=0;
+        this.favorability=0;
+
     }
-    search_target(map, animal_map, obj_map) {
+    search_target(map, animal_map, obj_map,IDmap=null) {
         const rows = map.length;
         const cols = map[0].length;
         const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
@@ -118,6 +121,7 @@ export class Animal extends Object {
             if (
                 this.state == State_id.FIND_FOOD &&
                 obj_map[current.y] && obj_map[current.y][current.x] && obj_map[current.y][current.x].number == Object_name.GRASS ||
+                this.state == State_id.FOLLOW&&IDmap&&IDmap[current.y][current.x]&&IDmap[current.y][current.x].ID ==this.follow_id||
                 this.state == State_id.FIND_WATER && map[current.y][current.x] == 1 ||
                 this.state == State_id.FIND_SAME_ANIMAL &&
                 animal_map[current.y] &&
@@ -128,6 +132,19 @@ export class Animal extends Object {
                 this.target_x = current.x;
                 this.target_y = current.y;
                 this.path = current.path;
+                if(this.state == State_id.FOLLOW){
+                    if(this.target_x>400){
+                        this.target_x-=7;
+                    }
+                    else{
+                        this.target_x+=7;
+                    }if(this.target_y>400){
+                        this.target_y-=7;
+                    }
+                    else{
+                        this.target_y+=7;
+                    }
+                }
                 return true;
             }
     
@@ -162,7 +179,7 @@ export class Animal extends Object {
     
         return false;
     }
-    normal_movement(map,animal_map,obj_map){
+    normal_movement(map,animal_map,obj_map,IDmap=null){
         if(this.changing_movement){
             this.changing_movement=false;
             return this.move();
@@ -182,9 +199,9 @@ export class Animal extends Object {
                 this.change_state();
             }
         }
-        else if(this.state == State_id.FIND_WATER||this.state == State_id.FIND_FOOD||this.state == State_id.FIND_SAME_ANIMAL){
+        else if(this.state == State_id.FIND_WATER||this.state == State_id.FIND_FOOD||this.state == State_id.FIND_SAME_ANIMAL||this.state == State_id.FOLLOW){
             if(!this.changed){
-                this.search_target(map,animal_map,obj_map);
+                this.search_target(map,animal_map,obj_map,IDmap);
                 this.index=0;
                 this.changed=true;
             }
@@ -204,12 +221,12 @@ export class Animal extends Object {
                         this.movement--;
                     }
 
+                    this.changed=false;
                     if(this.x==this.target_x&&this.y==this.target_y){
                         this.target_x=-1;
                         this.target_y=-1;
                         this.path=[];
                         this.index=0;
-                        this.changed=false;
                         this.change_state();
                     }
             }
@@ -294,42 +311,42 @@ export class Animal extends Object {
 }
 export class Dog extends Animal {
     constructor( x, y) {
-        super(Object_name.DOG, x, y, 'images/dog.png',40,0,0,  [FoodID.BONES],3);
+        super(Object_name.DOG, x, y, 'images/dog.png',40,0,0,  [Item_name.FRUIT,Item_name.COCONUT],0,3);
     }
 }
 
 export class Cow extends Animal {
     constructor(x, y) {
-        super(Object_name.COW, x, y, 'images/cow.png',80,0,0, [FoodID.GRASS],3);
+        super(Object_name.COW, x, y, 'images/cow.png',80,0,0, [Item_name.LEAVES,Item_name.WHEAT],2,3);
     }
 }
 
 export class Pig extends Animal {
     constructor(x, y) {
-        super(Object_name.PIG, x, y, 'images/pig.png',60,0,0, [FoodID.MUSHROOM],3);
+        super(Object_name.PIG, x, y, 'images/pig.png',60,0,0, [Item_name.POTATO,Item_name.WHEAT],2,3);
     }
 }
 
 export class Rabbit extends Animal {
     constructor(x, y) {
-        super(Object_name.RABBIT, x, y, 'images/rabbit.png',20,0,0, [FoodID.CARROTS],3);
+        super(Object_name.RABBIT, x, y, 'images/rabbit.png',20,0,0, [Item_name.CARROT,Item_name.LEAVES],2,3);
     }
 }
 
 export class Sheep extends Animal {
     constructor(x, y) {
-        super(Object_name.SHEEP, x, y, 'images/sheep.png',60,0,0, [FoodID.GRASS],3);
+        super(Object_name.SHEEP, x, y, 'images/sheep.png',60,0,0, [Item_name.LEAVES,Item_name.BERRY],2,3);
     }
 }
 
 export class SoulFox extends Animal {
     constructor(x, y) {
-        super(Object_name.SOUL_FOX, x, y, 'images/soul_fox.png',100,0,0, [FoodID.SOULS],3);
+        super(Object_name.SOUL_FOX, x, y, 'images/soul_fox.png',100,0,0, [],0,3);
     }
 }
 export class Player extends Animal{
     constructor(x, y,playerId) {
-        super(Object_name.PLAYER, x, y,'images/player.png',60,0,0, [],3);
+        super(Object_name.PLAYER, x, y,'images/player.png',60,0,0, [Item_name.BERRY,Item_name.FRUIT,Item_name.COCONUT],3,3);
         this.playerId=playerId;
     }
 }

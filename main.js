@@ -324,7 +324,7 @@ let other_player_obj=[];
         player.x = Math.random() * 800 * 20;
         player.y = Math.random() * 800 * 20;
     }
-    socket.emit("addPlayer",new Point(player.x,player.y,1))
+    socket.emit("addPlayer",new Point(player.x,player.y,1));
     socket.on("set_ID",async(obj)=>{playerID=obj});
     player_obj=new OBJ.Player(Math.floor(player.x / 20), Math.floor(player.y / 20));
     // animalMap.addObject(play_obj);
@@ -738,7 +738,43 @@ let question_mark;
                 }
             }
         }
-
+        socket.on('hit_animal',async(data)=>{
+            if(playerID==data.ID){
+                player_obj.hp=data.hp;
+                updateHPBar(player_hpBar, player_obj.hp, player_obj.full_hp);
+                if(player_obj.hp==0){
+                    app.ticker.stop();
+                    document.getElementById('game-over').style.display = 'block';
+                }
+            }
+            else{
+                for (let i = 0; i < 800; i++) {
+                for (let j = 0; j < 800; j++) {
+                    if(animal_sprite[i][j]){
+                    if(animal_spriteID[i][j]==data.ID){
+                        animalMap.map[i][j].hp=data.hp;
+                        
+                        console.log('hit');
+                        if(data.hp<=0){
+                            deleteobj(i,j,animalMap,animal_sprite[i][j],app);
+                        }
+                    }
+                }}
+                };
+            }});
+        socket.on('tame_animal',async(data)=>{
+            for (let i = 0; i < 800; i++) {
+            for (let j = 0; j < 800; j++) {
+                if(animal_sprite[i][j]){
+                if(animal_spriteID[i][j]==data.ID){
+                    
+            console.log('tame');
+                    animalMap.map[i][j].follow_id=data.playerID;
+                    animalMap.map[i][j].state=OBJ.State_id.FOLLOW;
+                    console.log(animalMap.map[i][j]);
+                }
+            }
+            }}});
 
 //player movement
 if(player_hitting==false)
@@ -760,7 +796,7 @@ if(player_hitting==false)
             newX += speed;
             targetRotation = keys[keyS] ? 3 * Math.PI / 4 : keys[keyW] ? Math.PI / 4 : Math.PI / 2;
         }if (map.mapData[Math.floor(player.y / 20)][Math.floor(player.x / 20)] == 2) {
-            player_obj.hp--;
+            player_obj.hp-=10;
             updateHPBar(player_hpBar, player_obj.hp, player_obj.full_hp);
             if(player_obj.hp==0){
                 app.ticker.stop();

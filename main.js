@@ -603,7 +603,7 @@ let question_mark;
         if(player_hitting == false&&keys[keyT]&&Tclick==false){
             let x=mouseX;
             let y=mouseY;
-            taming=tame_animal_func(mouseX, mouseY, animalMap,animal_spriteID,animal_sprite,app,socket,playerID)
+            taming=tame_animal_func(mouseX, mouseY, animalMap,kill_amount)
             .then(async (taming) => {
                 taming_choice=false;
                 if (taming) {

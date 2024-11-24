@@ -248,6 +248,7 @@ io.on('connection', (socket) => {
         
     });
     socket.on('hit_animal', (data) => {
+    io.emit('hit_animal',{ID:data.ID,hp:data.hp});
         
     for (let i = 0; i < 800; i++) {
     for (let j = 0; j < 800; j++) {
@@ -262,7 +263,6 @@ io.on('connection', (socket) => {
         }
     }
     }};
-    io.emit('hit_animal',{ID:data.ID,hp:data.hp})
     });
     socket.on('tame_animal', (data) => {
         console.log("tamed_animal");

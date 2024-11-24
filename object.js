@@ -311,7 +311,7 @@ export class Animal extends Object {
 }
 export class Dog extends Animal {
     constructor( x, y) {
-        super(Object_name.DOG, x, y, 'images/dog.png',40,0,0,  [Item_name.FRUIT,Item_name.COCONUT],0,3);
+        super(Object_name.DOG, x, y, 'images/dog.png',40,0,0,  [Item_name.FRUIT,Item_name.COCONUT,Item_name.WOOD],3,3);
     }
 }
 

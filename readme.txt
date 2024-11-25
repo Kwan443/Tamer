@@ -1,5 +1,4 @@
-groupID:18
-Members: Yung Tsun Kwan(tkyungag)
+
 How to Play
 Installation:
 Clone the repository or download the game files.
